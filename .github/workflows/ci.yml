@@ -27,6 +27,8 @@ jobs:
 
       - name: Validar esquema Prisma
         working-directory: backend
+        env:
+          DATABASE_URL: postgresql://nodus:nodus@localhost:5432/nodus
         run: npx prisma validate
 
       - name: Compilar
