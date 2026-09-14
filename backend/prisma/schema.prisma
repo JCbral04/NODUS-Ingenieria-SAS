@@ -1,0 +1,649 @@
+// ============================================================================
+// NODUS — Ingeniería SAS | Esquema Prisma MVP
+// Plataforma de orquestación de casos Mipyme ↔ Consultores
+// 18+ tablas: RBAC, empresa única, workflow de 16 estados, LOV gobernado,
+// bolsa/postulaciones, propuestas versionadas, contratación, ejecución,
+// documentos, bitácora inmutable, SLA y notificaciones.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// ENUMS — Ciclo de vida y catálogos gobernados (sin texto libre crítico)
+// ----------------------------------------------------------------------------
+
+enum UserStatus {
+  ACTIVO
+  INACTIVO
+  SUSPENDIDO
+}
+
+enum CaseStatus {
+  CREADO
+  EN_REVISION
+  CLASIFICADO
+  EN_POSTULACION
+  ASIGNADO
+  PROPUESTA_EN_DISENO
+  PROPUESTA_LISTA_QA
+  PROPUESTA_ENVIADA
+  EN_DECISION_CLIENTE
+  AJUSTES_PROPUESTA
+  PROPUESTA_ACEPTADA
+  PENDIENTE_CONTRATACION
+  AUTORIZADO_EJECUCION
+  EN_EJECUCION
+  LISTO_PARA_CIERRE
+  CERRADO
+  CERRADO_SIN_CONTRATACION
+}
+
+enum ConsultantStatus {
+  REGISTRADO
+  EN_VALIDACION
+  HABILITADO
+  CONDICIONADO
+  SUSPENDIDO
+  INACTIVO
+}
+
+enum ConsultantModality {
+  INDEPENDIENTE
+  SPONSOR
+  PROPIO
+}
+
+enum ApplicationStatus {
+  POSTULADO
+  EN_EVALUACION
+  ASIGNADO
+  NO_ASIGNADO
+  RETIRADA
+}
+
+enum ProposalStatus {
+  BORRADOR
+  EN_DISENO
+  EN_REVISION_QA
+  EN_AJUSTES
+  APROBADA_ENVIAR
+  ENVIADA
+  ACEPTADA
+  RECHAZADA
+}
+
+enum ChecklistStatus {
+  PENDIENTE
+  EN_CURSO
+  COMPLETADO
+  NO_APLICA
+}
+
+enum ActivityStatus {
+  NO_INICIADA
+  EN_CURSO
+  COMPLETADA
+  BLOQUEADA
+  REPROGRAMADA
+}
+
+enum MilestoneStatus {
+  PENDIENTE
+  EN_CURSO
+  CUMPLIDO
+  VENCIDO
+  REPROGRAMADO
+}
+
+enum DeliverableStatus {
+  PENDIENTE
+  EN_DESARROLLO
+  CARGADO
+  EN_REVISION
+  APROBADO
+}
+
+enum IncidentStatus {
+  ABIERTA
+  EN_ATENCION
+  ESCALADA
+  CERRADA
+}
+
+enum IncidentImpact {
+  BAJO
+  MEDIO
+  ALTO
+  CRITICO
+}
+
+enum DecisionType {
+  ACEPTAR
+  SOLICITAR_AJUSTES
+  NO_CONTINUAR
+}
+
+enum EvaluationType {
+  SATISFACCION_CLIENTE
+  DESEMPENO_CONSULTOR
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+enum DocumentStage {
+  INTAKE
+  EVALUACION
+  POSTULACION
+  PROPUESTA
+  CONTRATACION
+  EJECUCION
+  CIERRE
+}
+
+// ----------------------------------------------------------------------------
+// 1. RBAC — Roles y usuarios
+// ----------------------------------------------------------------------------
+
+model Role {
+  id          Int    @id @default(autoincrement())
+  code        String @unique // ADMIN | ADVISORY | MIPYME | CONSULTOR | REVISOR
+  name        String
+  description String?
+  users       User[]
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  passwordHash String
+  fullName     String
+  phone        String?
+  roleId       Int
+  role         Role       @relation(fields: [roleId], references: [id])
+  status       UserStatus @default(ACTIVO)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  companyContacts     CompanyContact[]
+  consultant          Consultant?
+  caseStateHistory    CaseStateHistory[]
+  classificationsMade CaseClassification[] @relation("Classifier")
+  applications        Application[]
+  proposals           Proposal[]
+  reviews             ProposalReview[]
+  activities          Activity[]           @relation("ActivityResponsible")
+  incidentsReported   Incident[]           @relation("IncidentReporter")
+  documents           Document[]
+  decisions           CaseDecision[]
+  evaluationsMade     Evaluation[]         @relation("Evaluator")
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+}
+
+// ----------------------------------------------------------------------------
+// 2. EMPRESA ÚNICA — Empresas y contactos (principio: Empresa única – Casos múltiples)
+// ----------------------------------------------------------------------------
+
+model Company {
+  id          Int     @id @default(autoincrement())
+  name        String
+  email       String?
+  emailDomain String? // usado en verificación anti-duplicados (RF-002/003)
+  taxId       String? @unique // NIT — usado en verificación anti-duplicados
+  country     String
+  city        String
+  status      String  @default("ACTIVA")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contacts CompanyContact[]
+  cases    Case[]
+
+  @@index([emailDomain])
+  @@index([name])
+}
+
+model CompanyContact {
+  id        Int      @id @default(autoincrement())
+  companyId Int
+  company   Company  @relation(fields: [companyId], references: [id])
+  userId    Int?     @unique // el contacto puede tener credenciales de acceso
+  user      User?    @relation(fields: [userId], references: [id])
+  fullName  String
+  position  String?
+  email     String
+  phone     String?
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  cases Case[] @relation("CaseContact")
+}
+
+// ----------------------------------------------------------------------------
+// 3. GOBIERNO LOV — Taxonomías centralizadas (RF-019/021, RT-015/016/017)
+// ----------------------------------------------------------------------------
+
+model LovCategory {
+  id          Int        @id @default(autoincrement())
+  code        String     @unique // AREA_PROBLEMA | TIPO_INTERVENCION | ...
+  name        String
+  description String?
+  values      LovValue[]
+}
+
+model LovValue {
+  id         Int         @id @default(autoincrement())
+  categoryId Int
+  category   LovCategory @relation(fields: [categoryId], references: [id])
+  code       String
+  label      String
+  sortOrder  Int         @default(0)
+  active     Boolean     @default(true)
+
+  casesByArea            Case[]               @relation("CaseArea")
+  casesByUrgency         Case[]               @relation("CaseUrgency")
+  casesByImpact          Case[]               @relation("CaseImpact")
+  classificationsByArea  CaseClassification[] @relation("ClassArea")
+  classificationsByType  CaseClassification[] @relation("ClassIntervention")
+  classificationsByCmplx CaseClassification[] @relation("ClassComplexity")
+  classificationsByImp   CaseClassification[] @relation("ClassImpact")
+  consultantSpecialties  Consultant[]
+  incidentTypes          Incident[]
+
+  @@unique([categoryId, code])
+}
+
+// ----------------------------------------------------------------------------
+// 4. CASO — Unidad principal del proceso
+// ----------------------------------------------------------------------------
+
+model Case {
+  id                   Int         @id @default(autoincrement())
+  caseNumber           String      @unique // CAS-000001 (RF-009)
+  companyId            Int
+  company              Company     @relation(fields: [companyId], references: [id])
+  contactId            Int?
+  contact              CompanyContact? @relation("CaseContact", fields: [contactId], references: [id])
+  title                String
+  description          String      @db.Text
+  areaId               Int?
+  area                 LovValue?   @relation("CaseArea", fields: [areaId], references: [id])
+  urgencyId            Int
+  urgency              LovValue    @relation("CaseUrgency", fields: [urgencyId], references: [id])
+  impactId             Int
+  impact               LovValue    @relation("CaseImpact", fields: [impactId], references: [id])
+  status               CaseStatus  @default(CREADO) // RF-012
+  statusChangedAt      DateTime    @default(now())
+  assignedConsultantId Int?
+  assignedConsultant   Consultant? @relation("AssignedCases", fields: [assignedConsultantId], references: [id])
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  classifications CaseClassification[]
+  stateHistory    CaseStateHistory[]
+  applications    Application[]
+  proposals       Proposal[]
+  contract        Contract?
+  checklistItems  ContractChecklistItem[]
+  activities      Activity[]
+  milestones      Milestone[]
+  deliverables    Deliverable[]
+  incidents       Incident[]
+  documents       Document[]
+  decisions       CaseDecision[]
+  evaluations     Evaluation[]
+  auditLogs       AuditLog[]
+
+  @@index([companyId])
+  @@index([status])
+}
+
+// Clasificación estructurada con historial (RF-020/025) — solo LOV, nunca texto libre
+model CaseClassification {
+  id                 Int      @id @default(autoincrement())
+  caseId             Int
+  case               Case     @relation(fields: [caseId], references: [id])
+  areaId             Int
+  area               LovValue @relation("ClassArea", fields: [areaId], references: [id])
+  interventionTypeId Int
+  interventionType   LovValue @relation("ClassIntervention", fields: [interventionTypeId], references: [id])
+  complexityId       Int
+  complexity         LovValue @relation("ClassComplexity", fields: [complexityId], references: [id])
+  impactId           Int
+  impact             LovValue @relation("ClassImpact", fields: [impactId], references: [id])
+  eligibilityNotes   String?  @db.Text // resultado de T2 + observaciones
+  isEligible         Boolean  @default(true) // RF-022
+  classifiedById     Int
+  classifiedBy       User     @relation("Classifier", fields: [classifiedById], references: [id])
+  createdAt          DateTime @default(now())
+
+  @@index([caseId])
+}
+
+// Historial explícito de transiciones (complementa audit_logs)
+model CaseStateHistory {
+  id          Int        @id @default(autoincrement())
+  caseId      Int
+  case        Case       @relation(fields: [caseId], references: [id])
+  fromStatus  CaseStatus?
+  toStatus    CaseStatus
+  actorId     Int?
+  actor       User?      @relation(fields: [actorId], references: [id])
+  note        String?
+  createdAt   DateTime   @default(now())
+
+  @@index([caseId])
+}
+
+// ----------------------------------------------------------------------------
+// 5. ECOSISTEMA DE CONSULTORES — Flujo paralelo (TC1–TC3)
+// ----------------------------------------------------------------------------
+
+model Consultant {
+  id              Int               @id @default(autoincrement())
+  userId          Int               @unique
+  user            User              @relation(fields: [userId], references: [id])
+  specialtyId     Int?
+  specialty       LovValue?         @relation(fields: [specialtyId], references: [id])
+  levelCode       String?           // NIVEL_CONSULTOR LOV: VALIDADO | HABILITADO | PREMIUM | ESTRATEGICO
+  modality        ConsultantModality @default(INDEPENDIENTE)
+  sponsorName     String?           // empresa sponsor, si aplica
+  status          ConsultantStatus  @default(REGISTRADO)
+  availability    Boolean           @default(true)
+  bio             String?           @db.Text
+  experienceYears Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  applications   Application[]
+  proposals      Proposal[]
+  assignedCases  Case[]           @relation("AssignedCases")
+}
+
+// Postulación estructurada T3C — única postulación por consultor y caso
+model Application {
+  id                Int               @id @default(autoincrement())
+  caseId            Int
+  case              Case              @relation(fields: [caseId], references: [id])
+  consultantId      Int
+  consultant        Consultant        @relation(fields: [consultantId], references: [id])
+  interestStatement String            @db.Text // manifestación de interés
+  isAvailable       Boolean           @default(true)
+  relevance         String            @db.Text // justificación de pertinencia
+  relevantExperience String           @db.Text
+  status            ApplicationStatus @default(POSTULADO)
+  createdAt         DateTime          @default(now())
+
+  @@unique([caseId, consultantId]) // RF-033: un único responsable principal
+  @@index([caseId])
+  @@index([consultantId])
+}
+
+// ----------------------------------------------------------------------------
+// 6. PROPUESTAS — TP4C estructurado + versionado (RF-037–046)
+//    Una fila por versión: (caseId, version) único. Nunca se sobrescribe.
+// ----------------------------------------------------------------------------
+
+model Proposal {
+  id                Int            @id @default(autoincrement())
+  caseId            Int
+  case              Case           @relation(fields: [caseId], references: [id])
+  consultantId      Int
+  consultant        Consultant     @relation(fields: [consultantId], references: [id])
+  version           Int            @default(1)
+  status            ProposalStatus @default(EN_DISENO)
+  // Bloques mínimos TP4C
+  executiveSummary  String         @db.Text // A. resumen ejecutivo
+  objective         String         @db.Text // B. objetivo de la intervención
+  scope             String         @db.Text // C. alcance
+  exclusions        String?        @db.Text // D. exclusiones
+  activities        Json?          // E. actividades / componentes (estructurado)
+  deliverables      Json?          // F. entregables esperados (estructurado)
+  schedule          Json?          // G. cronograma preliminar (fases/hitos)
+  valuation         String?        @db.Text // H. valoración inicial
+  conditions        String?        @db.Text // I. condiciones y supuestos
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  reviews ProposalReview[]
+
+  @@unique([caseId, version]) // RF-041/042: versionamiento, sin sobrescritura
+  @@index([caseId])
+}
+
+// Revisión metodológica QA — TP4H checklist (RF-043/044)
+model ProposalReview {
+  id               Int      @id @default(autoincrement())
+  proposalId       Int
+  proposal         Proposal @relation(fields: [proposalId], references: [id])
+  reviewerId       Int
+  reviewer         User     @relation(fields: [reviewerId], references: [id])
+  checklist        Json     // {completa:true, plantillas:true, coherencia:true, cronograma:true, exclusiones:true, supuestos:true}
+  observations     String?  @db.Text
+  approved         Boolean  @default(false)
+  adjustmentRequest String? @db.Text // solicitud formal de ajustes
+  createdAt        DateTime @default(now())
+
+  @@index([proposalId])
+}
+
+// ----------------------------------------------------------------------------
+// 7. CONTRATACIÓN — Checklist T7A bloqueante + marco operativo T7B (RF-066–072)
+// ----------------------------------------------------------------------------
+
+model Contract {
+  id          Int      @id @default(autoincrement())
+  caseId      Int      @unique
+  case        Case     @relation(fields: [caseId], references: [id])
+  consultantId Int
+  consultant  Consultant @relation(fields: [consultantId], references: [id])
+  status      ChecklistStatus @default(PENDIENTE)
+  // Marco operativo del servicio T7B (cargado por el consultor)
+  operativeFramework Json? // {condiciones, duracion, hitos, entregables, dependencias, supuestos, restricciones, contacto}
+  evidenceNotes String?   @db.Text // T7C registro de evidencia contractual
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ContractChecklistItem {
+  id           Int             @id @default(autoincrement())
+  caseId       Int
+  case         Case            @relation(fields: [caseId], references: [id])
+  label        String          // T7A: actividad requerida
+  responsible  String          // CONSULTOR | CLIENTE | ADVISORY
+  dueDate      DateTime?
+  status       ChecklistStatus @default(PENDIENTE)
+  completedAt  DateTime?
+  evidence     String?         // referencia a Document o nota
+  createdAt    DateTime        @default(now())
+
+  @@index([caseId])
+}
+
+// ----------------------------------------------------------------------------
+// 8. EJECUCIÓN — Agenda T8A, hitos T8C, incidencias T8D, entregables T8G
+// ----------------------------------------------------------------------------
+
+model Activity {
+  id            Int           @id @default(autoincrement())
+  caseId        Int
+  case          Case          @relation(fields: [caseId], references: [id])
+  title         String
+  description   String?       @db.Text
+  responsibleId Int?
+  responsible   User?         @relation("ActivityResponsible", fields: [responsibleId], references: [id])
+  dueDate       DateTime?
+  status        ActivityStatus @default(NO_INICIADA)
+  evidence      String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([caseId])
+}
+
+model Milestone {
+  id          Int            @id @default(autoincrement())
+  caseId      Int
+  case        Case           @relation(fields: [caseId], references: [id])
+  title       String
+  dueDate     DateTime
+  status      MilestoneStatus @default(PENDIENTE)
+  criticality Int            @default(1) // 1..3
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+
+  @@index([caseId])
+}
+
+model Incident {
+  id           Int             @id @default(autoincrement())
+  caseId       Int
+  case         Case            @relation(fields: [caseId], references: [id])
+  typeId       Int
+  type         LovValue        @relation(fields: [typeId], references: [id])
+  description  String          @db.Text
+  impact       IncidentImpact  @default(MEDIO)
+  suggestedAction String?      @db.Text
+  status       IncidentStatus  @default(ABIERTA)
+  reportedById Int
+  reportedBy   User            @relation("IncidentReporter", fields: [reportedById], references: [id])
+  resolution   String?         @db.Text
+  createdAt    DateTime        @default(now())
+  closedAt     DateTime?
+
+  @@index([caseId])
+}
+
+model Deliverable {
+  id          Int               @id @default(autoincrement())
+  caseId      Int
+  case        Case              @relation(fields: [caseId], references: [id])
+  milestoneId Int?
+  milestone   Milestone?        @relation(fields: [milestoneId], references: [id])
+  title       String
+  description String?           @db.Text
+  version     Int               @default(1)
+  status      DeliverableStatus @default(PENDIENTE)
+  documentId  Int?              @unique
+  document    Document?         @relation(fields: [documentId], references: [id])
+  completedAt DateTime?
+  createdAt   DateTime          @default(now())
+
+  @@index([caseId])
+}
+
+// ----------------------------------------------------------------------------
+// 9. DECISIÓN DEL CLIENTE (TP6A) y EVALUACIONES DE CIERRE (T9G/T9H)
+// ----------------------------------------------------------------------------
+
+model CaseDecision {
+  id         Int          @id @default(autoincrement())
+  caseId     Int
+  case       Case         @relation(fields: [caseId], references: [id])
+  type       DecisionType // ACEPTAR | SOLICITAR_AJUSTES | NO_CONTINUAR
+  notes      String?      @db.Text // T6B: ajustes solicitados / T6E: motivo de no continuidad
+  decidedById Int
+  decidedBy  User         @relation(fields: [decidedById], references: [id])
+  createdAt  DateTime     @default(now())
+
+  @@index([caseId])
+}
+
+model Evaluation {
+  id          Int            @id @default(autoincrement())
+  caseId      Int
+  case        Case           @relation(fields: [caseId], references: [id])
+  type        EvaluationType // SATISFACCION_CLIENTE | DESEMPENO_CONSULTOR
+  score       Int            // 1..5
+  comments    String?        @db.Text
+  evaluatorId Int
+  evaluator   User           @relation("Evaluator", fields: [evaluatorId], references: [id])
+  createdAt   DateTime       @default(now())
+
+  @@index([caseId])
+}
+
+// ----------------------------------------------------------------------------
+// 10. GESTIÓN DOCUMENTAL — Empresa → Caso → Etapa → Versión (RT-019–023)
+// ----------------------------------------------------------------------------
+
+model Document {
+  id           Int           @id @default(autoincrement())
+  caseId       Int
+  case         Case          @relation(fields: [caseId], references: [id])
+  stage        DocumentStage @default(INTAKE)
+  name         String
+  path         String        // ruta en storage (local MVP / S3 en producción)
+  mimeType     String?
+  sizeBytes    Int?
+  version      Int           @default(1)
+  uploadedById Int
+  uploadedBy   User          @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime      @default(now())
+
+  deliverable Deliverable?
+
+  @@index([caseId, stage])
+}
+
+// ----------------------------------------------------------------------------
+// 11. TRANSVERSALES — Bitácora inmutable, SLA, Notificaciones (RT-001–014)
+// ----------------------------------------------------------------------------
+
+// Audit Log: append-only. La inmutabilidad se garantiza en la capa de
+// servicio (sin endpoints de update/delete) — RT-004.
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  action     String   // CREATE | UPDATE | TRANSITION | LOGIN | UPLOAD | ...
+  entity     String   // Case | Proposal | Document | User | ...
+  entityId   Int
+  caseId     Int?     // facilita trazabilidad completa del caso (RT-005)
+  case       Case?    @relation(fields: [caseId], references: [id])
+  prevState  String?  // estado anterior (RT-003)
+  newState   String?
+  metadata   Json?    // payload contextual del cambio
+  createdAt  DateTime @default(now())
+
+  @@index([caseId])
+  @@index([entity, entityId])
+  @@index([actorId])
+}
+
+// SLA parametrizables por etapa/estado (RT-006) — gobernados, no quemados
+model SlaRule {
+  id              Int        @id @default(autoincrement())
+  fromStatus      CaseStatus // etapa desde la que corre el reloj
+  hours           Int        // tiempo objetivo
+  escalationLevel Int        @default(1) // 1=recordatorio, 2=alerta, 3=escalamiento
+  active          Boolean    @default(true)
+}
+
+// Comunicaciones estructuradas TCOM (RT-010–013)
+model Notification {
+  id           Int                 @id @default(autoincrement())
+  userId       Int
+  user         User                @relation(fields: [userId], references: [id])
+  caseId       Int?
+  templateCode String              // TCOM1 | TCOM2 | ... (catálogo gobernado)
+  title        String
+  message      String              @db.Text
+  channel      NotificationChannel @default(IN_APP)
+  isRead       Boolean             @default(false)
+  createdAt    DateTime            @default(now())
+
+  @@index([userId, isRead])
+  @@index([caseId])
+}

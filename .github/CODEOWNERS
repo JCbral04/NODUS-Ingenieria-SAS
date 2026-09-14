@@ -1,0 +1,24 @@
+# ============================================================================
+# NODUS — Asignación automática de revisores por área del repo.
+# El revisor asignado por CODEOWNERS debe aprobar antes del merge.
+#
+# Distribución del equipo:
+#   Juan Cabral  → backend, arquitectura, workflow, DevOps
+#   Laura Ruiz   → frontend y UX/UI (líder)
+#   Manuel Osorio→ frontend (apoyo), QA y documentación
+# ============================================================================
+
+# Backend, arquitectura, base de datos y DevOps → Juan Cabral
+/backend/            @JCbral04
+/docker-compose.yml  @JCbral04
+/Makefile            @JCbral04
+/.github/workflows/  @JCbral04
+
+# Frontend y UX → Laura Ruiz (líder) + Manuel Osorio (apoyo)
+# Juan Cabral entra solo como fallback para destrabar PRs.
+/frontend/           @lauringu @273Manuel @JCbral04
+
+# Documentación, ADRs y evidencias → Manuel Osorio (respaldo: Laura)
+# Juan Cabral entra solo como fallback para destrabar PRs.
+/docs/               @273Manuel @lauringu @JCbral04
+README.md            @273Manuel @JCbral04

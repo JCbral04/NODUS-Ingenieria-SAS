@@ -1,0 +1,48 @@
+version: "3.9"
+
+# NODUS — Entorno local de desarrollo
+# Uso:  docker compose up -d        (solo base de datos)
+#       docker compose logs -f db
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: nodus-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nodus
+      POSTGRES_PASSWORD: nodus
+      POSTGRES_DB: nodus
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nodus -d nodus"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # --- Día 2-3: descomentar cuando existan los Dockerfiles -------------
+  # api:
+  #   build: ./backend
+  #   container_name: nodus-api
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   environment:
+  #     DATABASE_URL: postgresql://nodus:nodus@db:5432/nodus
+  #     JWT_SECRET: ${JWT_SECRET:-dev-secret-cambiar}
+  #   ports:
+  #     - "3001:3001"
+  #
+  # web:
+  #   build: ./frontend
+  #   container_name: nodus-web
+  #   depends_on:
+  #     - api
+  #   ports:
+  #     - "3000:3000"
+
+volumes:
+  pgdata:
