@@ -66,3 +66,12 @@ tiene prioridad absoluta de arreglo sobre cualquier feature nueva.
 
 `.github/workflows/ci.yml` compila backend y frontend y ejecuta tests en
 cada push a `main` y cada PR. **No se mergea con CI en rojo.**
+
+
+## Reglas de Prisma
+
+- Todo cambio en `schema.prisma` exige `npx prisma migrate dev` antes de
+  correr código: recién así el Prisma Client regenera los tipos.
+- Los comandos `npx prisma` se ejecutan siempre desde `backend/`.
+- El seed es idempotente: se puede correr `make seed` cuantas veces sea
+  necesario sin duplicar datos.

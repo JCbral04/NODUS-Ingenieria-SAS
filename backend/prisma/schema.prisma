@@ -457,8 +457,8 @@ model Contract {
 
 model ContractChecklistItem {
   id           Int             @id @default(autoincrement())
-  caseId       Int
-  case         Case            @relation(fields: [caseId], references: [id])
+  caseId       Int?
+  case         Case?            @relation(fields: [caseId], references: [id])
   label        String          // T7A: actividad requerida
   responsible  String          // CONSULTOR | CLIENTE | ADVISORY
   dueDate      DateTime?
