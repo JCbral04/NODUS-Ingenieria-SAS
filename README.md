@@ -199,3 +199,7 @@ video demo (se adjuntan en la entrega final).
 ## 13. Licencia
 
 MIT — Proyecto desarrollado como prueba técnica para Ingenierías SAS.
+
+## Trazabilidad de requerimientos 
+
+[Matriz de trazabilidad](docs/trazabilidad.md)
