@@ -234,11 +234,11 @@ async function main() {
     ['Verificación advisory de formalización', 'ADVISORY'],
   ];
   for (const [label, responsible] of checklistLabels) {
-    const exists = await prisma.contractChecklistItem.findFirst({ where: { label, caseId: 0 } });
+    const exists = await prisma.contractChecklistItem.findFirst({ where: { label, caseId: null } });
     if (!exists) {
-      // Se guardan como plantilla con caseId=0; al activar contratación se copian al caso
+      // Plantilla: caseId null = ítem de plantilla T7A; al activar contratación se copian al caso
       await prisma.contractChecklistItem.create({
-        data: { caseId: 0, label, responsible },
+        data: { caseId: null, label, responsible },
       });
     }
   }
