@@ -14,10 +14,11 @@ import { DocumentsModule } from './documents/documents.module';
 import { SlaModule } from './sla/sla.module';
 import { AuditModule } from './audit/audit.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [AuthModule, UsersModule, CompaniesModule, CasesModule, WorkflowModule, ConsultantsModule, ApplicationsModule, ProposalsModule, ContractsModule, ExecutionModule, DocumentsModule, SlaModule, AuditModule, NotificationsModule],
-  controllers: [],
+  controllers: [HealthController],
   providers: [PrismaService],
 })
 export class AppModule {}
