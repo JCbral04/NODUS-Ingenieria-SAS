@@ -1,5 +1,3 @@
-version: "3.9"
-
 # NODUS — Entorno local de desarrollo
 # Uso:  docker compose up -d        (solo base de datos)
 #       docker compose logs -f db
