@@ -16,9 +16,9 @@
 
 # Frontend y UX → Laura Ruiz (líder) + Manuel Osorio (apoyo)
 # Juan Cabral entra solo como fallback para destrabar PRs.
-/frontend/           @lauringu @273Manuel @JCbral04
+/frontend/           @puringu @273Manuel @JCbral04
 
 # Documentación, ADRs y evidencias → Manuel Osorio (respaldo: Laura)
 # Juan Cabral entra solo como fallback para destrabar PRs.
-/docs/               @273Manuel @lauringu @JCbral04
+/docs/               @273Manuel @puringu @JCbral04
 README.md            @273Manuel @JCbral04
