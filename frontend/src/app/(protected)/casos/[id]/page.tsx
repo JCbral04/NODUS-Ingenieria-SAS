@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { statusLabel, statusColor } from "@/lib/case-status";
+import { TRANSITIONS } from "@/lib/transitions";
 
 interface LovLabel {
   label: string;
@@ -48,15 +50,44 @@ interface CaseDetail {
 export default function CasoDetallePage() {
   const params = useParams();
   const id = params.id as string;
+  const { user } = useAuth();
 
   const [data, setData] = useState<CaseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [note, setNote] = useState("");
+  const [selectedTarget, setSelectedTarget] = useState("");
+  const [transitionError, setTransitionError] = useState<string | null>(null);
+  const [transitioning, setTransitioning] = useState(false);
+
+  const loadCase = useCallback(() => {
     apiFetch<CaseDetail>(`/api/cases/${id}`)
       .then(setData)
       .catch((err) => setError(err instanceof Error ? err.message : "Error al cargar el caso"));
   }, [id]);
+
+  useEffect(() => {
+    loadCase();
+  }, [loadCase]);
+
+  async function handleTransition() {
+    if (!selectedTarget) return;
+    setTransitionError(null);
+    setTransitioning(true);
+    try {
+      await apiFetch(`/api/cases/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ targetStatus: selectedTarget, note: note || undefined }),
+      });
+      setNote("");
+      setSelectedTarget("");
+      loadCase();
+    } catch (err) {
+      setTransitionError(err instanceof Error ? err.message : "No se pudo cambiar el estado");
+    } finally {
+      setTransitioning(false);
+    }
+  }
 
   if (error) {
     return (
@@ -72,6 +103,8 @@ export default function CasoDetallePage() {
   }
 
   const currentClassification = data.classifications?.[0] ?? null;
+  const canTransition = user?.role === "ADVISORY" || user?.role === "ADMIN";
+  const availableTargets = TRANSITIONS[data.status] ?? [];
 
   return (
     <div>
@@ -162,6 +195,60 @@ export default function CasoDetallePage() {
               <p className="mt-2 text-sm text-slate-500">Este caso todavía no ha sido clasificado.</p>
             )}
           </section>
+
+          {canTransition && (
+            <section className="rounded-lg border border-slate-800 bg-slate-900 p-5">
+              <h2 className="font-semibold text-slate-100">Cambiar estado</h2>
+
+              {availableTargets.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-500">
+                  Este caso está en un estado final, no tiene transiciones disponibles.
+                </p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {availableTargets.map((target) => (
+                      <button
+                        key={target}
+                        type="button"
+                        onClick={() => setSelectedTarget(target)}
+                        className={`rounded-md border px-3 py-1.5 text-sm ${
+                          selectedTarget === target
+                            ? "border-slate-100 bg-slate-100 text-slate-950"
+                            : "border-slate-700 text-slate-300 hover:bg-slate-800"
+                        }`}
+                      >
+                        → {statusLabel(target)}
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Nota (opcional)"
+                    rows={2}
+                    className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-500"
+                  />
+
+                  {transitionError && (
+                    <p className="rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">
+                      {transitionError}
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={!selectedTarget || transitioning}
+                    onClick={handleTransition}
+                    className="rounded-md bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-950 hover:opacity-90 disabled:opacity-50"
+                  >
+                    {transitioning ? "Aplicando…" : "Confirmar cambio de estado"}
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
         </div>
 
         <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
