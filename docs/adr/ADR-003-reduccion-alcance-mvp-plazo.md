@@ -41,6 +41,8 @@ cliente, se documentan pero **no se implementan** en esta entrega:
 | Cierre del caso (checklist T9C, acta de entrega) | RF-081…RF-087 |
 | Peer review avanzado | RF-050, RF-051 |
 | Reputación / scoring de consultores | — |
+| Gestión documental (repositorio, versionamiento) | RT-019…RT-023 |
+| Comunicaciones (centro de notificaciones, plantillas) | RT-010…RT-014 |
 
 ## Justificación de cada exclusión
 
@@ -60,6 +62,15 @@ cliente, se documentan pero **no se implementan** en esta entrega:
 - **Reputación de consultores:** requiere datos históricos acumulados de
   varios ciclos completos de casos, que no existen en un MVP de 5 días sin
   uso real todavía.
+- **Gestión documental:** ningún endpoint existe todavía (ni backend ni
+  frontend); implementarlo hoy bajo presión de tiempo introduce el mismo
+  riesgo que ya se evidenció en otras partes del sprint (migraciones, CORS,
+  conflictos de integración). Se prioriza dejar el flujo feliz core estable
+  y bien probado.
+- **Comunicaciones:** mismo criterio — el módulo `notifications/` sigue
+  vacío en el backend; construir un centro de notificaciones funcional de
+  cero en las últimas horas no aporta tanto valor a la evaluación como
+  consolidar lo ya construido.
 
 ## Consecuencias
 
