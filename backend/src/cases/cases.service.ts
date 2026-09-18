@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -10,6 +11,7 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma.service';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { CreateClassificationDto } from './dto/classification.dto';
+import { ApplyDto } from './dto/apply.dto';
 import { WorkflowService } from '../workflow/workflow.service';
 
 @Injectable()
@@ -171,6 +173,94 @@ export class CasesService {
       include: { actor: { select: { fullName: true } } },
     });
     return { ...caso, auditLog };
+  }
+
+  async publish(caseId: number, actorId: number) {
+    return this.workflow.transition(caseId, 'EN_POSTULACION', actorId, 'Caso publicado en la bolsa interna');
+  }
+
+  async pool(userId: number) {
+    const consultant = await this.prisma.consultant.findUnique({
+      where: { userId },
+      include: { specialty: true },
+    });
+    if (!consultant || consultant.status !== 'HABILITADO' || !consultant.availability)
+      throw new ForbiddenException('Consultor no habilitado o sin disponibilidad');
+
+    const cases = await this.prisma.case.findMany({
+      where: {
+        status: 'EN_POSTULACION',
+        classifications: { some: { areaId: consultant.specialtyId ?? -1, isEligible: true } },
+      },
+      include: {
+        area: { select: { label: true } },
+        urgency: { select: { label: true } },
+        classifications: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          include: {
+            interventionType: { select: { label: true } },
+            complexity: { select: { label: true } },
+          },
+        },
+      },
+      orderBy: { statusChangedAt: 'desc' },
+    });
+
+    return cases.map((c) => ({
+      id: c.id,
+      caseNumber: c.caseNumber,
+      title: c.title,
+      area: c.area?.label,
+      urgency: c.urgency?.label,
+      interventionType: c.classifications[0]?.interventionType?.label,
+      complexity: c.classifications[0]?.complexity?.label,
+      publishedAt: c.statusChangedAt,
+    }));
+  }
+
+  async apply(userId: number, caseId: number, dto: ApplyDto) {
+    const consultant = await this.prisma.consultant.findUnique({ where: { userId } });
+    if (!consultant || consultant.status !== 'HABILITADO')
+      throw new ForbiddenException('Consultor no habilitado en el ecosistema');
+
+    const caso = await this.prisma.case.findUnique({
+      where: { id: caseId },
+      include: { classifications: { orderBy: { createdAt: 'desc' }, take: 1 } },
+    });
+    if (!caso) throw new NotFoundException('Caso no existe');
+    if (caso.status !== 'EN_POSTULACION')
+      throw new UnprocessableEntityException(`El caso no está en postulación (estado: ${caso.status})`);
+
+    const lastClassification = caso.classifications[0];
+    if (!lastClassification || lastClassification.areaId !== consultant.specialtyId)
+      throw new ForbiddenException('No eres elegible para este caso (especialidad no coincide)');
+
+    let application;
+    try {
+      application = await this.prisma.application.create({
+        data: {
+          caseId,
+          consultantId: consultant.id,
+          interestStatement: dto.interestStatement,
+          isAvailable: dto.isAvailable,
+          relevance: dto.relevance,
+          relevantExperience: dto.relevantExperience,
+        },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002')
+        throw new ConflictException('Ya te postulaste a este caso');
+      throw e;
+    }
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: userId, action: 'APPLY', entity: 'Application', entityId: application.id,
+        caseId, prevState: null, newState: 'POSTULADO',
+        metadata: { consultantId: consultant.id },
+      },
+    });
+    return application;
   }
 
   private async validateLovSet(

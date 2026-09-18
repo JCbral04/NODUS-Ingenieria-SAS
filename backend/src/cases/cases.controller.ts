@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CasesService } from './cases.service';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { CreateClassificationDto } from './dto/classification.dto';
+import { ApplyDto } from './dto/apply.dto';
 import { WorkflowService } from '../workflow/workflow.service';
 import { TransitionDto } from '../workflow/dto/transition.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -28,6 +29,37 @@ export class CasesController {
   @Get()
   list(@Req() req: { user: { sub: number; role: string } }) {
     return this.cases.listForUser(req.user.sub, req.user.role);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADVISORY', 'ADMIN')
+  @ApiOperation({ summary: 'Publicar caso CLASIFICADO en la bolsa interna (RF-026)' })
+  @Post(':id/publish')
+  publish(@Param('id', ParseIntPipe) id: number, @Req() req: { user: { sub: number } }) {
+    return this.cases.publish(id, req.user.sub);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('CONSULTOR')
+  @ApiOperation({ summary: 'Bolsa interna: casos elegibles según especialidad y disponibilidad (RF-027/028)' })
+  @Get('pool')
+  pool(@Req() req: { user: { sub: number } }) {
+    return this.cases.pool(req.user.sub);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('CONSULTOR')
+  @ApiOperation({ summary: 'Postulación estructurada T3C (RF-029/030)' })
+  @Post(':id/apply')
+  apply(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ApplyDto,
+    @Req() req: { user: { sub: number } },
+  ) {
+    return this.cases.apply(req.user.sub, id, dto);
   }
 
   @ApiBearerAuth()
