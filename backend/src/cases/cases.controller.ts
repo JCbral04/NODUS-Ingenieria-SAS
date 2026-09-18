@@ -1,4 +1,4 @@
-import { Body, Controller, Param, ParseIntPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CasesService } from './cases.service';
 import { OnboardingDto } from './dto/onboarding.dto';
@@ -18,6 +18,20 @@ export class CasesController {
   @Post()
   create(@Body() dto: OnboardingDto) {
     return this.cases.createWithOnboarding(dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  list(@Req() req: { user: { sub: number; role: string } }) {
+    return this.cases.listForUser(req.user.sub, req.user.role);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  detail(@Param('id', ParseIntPipe) id: number) {
+    return this.cases.detail(id);
   }
 
   @ApiBearerAuth()

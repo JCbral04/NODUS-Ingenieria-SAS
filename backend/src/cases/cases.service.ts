@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -78,6 +79,55 @@ export class CasesService {
       });
       return { caseNumber: caso.caseNumber, status: caso.status, email: user.email };
     });
+  }
+
+  async listForUser(userId: number, role: string) {
+    const base = {
+      include: {
+        company: { select: { name: true } },
+        area: { select: { label: true } },
+        urgency: { select: { label: true } },
+        impact: { select: { label: true } },
+      },
+      orderBy: { createdAt: 'desc' as const },
+    };
+    if (role === 'ADVISORY' || role === 'ADMIN') return this.prisma.case.findMany(base);
+    if (role === 'MIPYME') {
+      const contact = await this.prisma.companyContact.findFirst({ where: { userId } });
+      if (!contact) return [];
+      return this.prisma.case.findMany({ ...base, where: { companyId: contact.companyId } });
+    }
+    if (role === 'CONSULTOR')
+      return this.prisma.case.findMany({ ...base, where: { assignedConsultant: { userId } } });
+    return [];
+  }
+
+  async detail(id: number) {
+    const caso = await this.prisma.case.findUnique({
+      where: { id },
+      include: {
+        company: true,
+        contact: true,
+        area: true, urgency: true, impact: true,
+        classifications: {
+          include: { area: true, interventionType: true, complexity: true, impact: true },
+          orderBy: { createdAt: 'desc' },
+        },
+        stateHistory: {
+          orderBy: { createdAt: 'desc' },
+          include: { actor: { select: { fullName: true } } },
+        },
+        assignedConsultant: { include: { user: { select: { fullName: true } } } },
+      },
+    });
+    if (!caso) throw new NotFoundException('Caso no existe');
+    const auditLog = await this.prisma.auditLog.findMany({
+      where: { caseId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      include: { actor: { select: { fullName: true } } },
+    });
+    return { ...caso, auditLog };
   }
 
   private async validateLov(
