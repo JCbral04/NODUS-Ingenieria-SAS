@@ -31,6 +31,20 @@ interface Classification {
   createdAt: string;
 }
 
+interface Applicant {
+  id: number;
+  status: string;
+  interestStatement: string;
+  relevance: string;
+  relevantExperience: string;
+  isAvailable: boolean;
+  createdAt: string;
+  consultant: {
+    user: { fullName: string; email: string };
+    specialty: { label: string } | null;
+  };
+}
+
 interface CaseDetail {
   id: number;
   caseNumber: string;
@@ -60,6 +74,11 @@ export default function CasoDetallePage() {
   const [transitionError, setTransitionError] = useState<string | null>(null);
   const [transitioning, setTransitioning] = useState(false);
 
+  const [applicants, setApplicants] = useState<Applicant[] | null>(null);
+  const [applicantsError, setApplicantsError] = useState<string | null>(null);
+  const [assigningId, setAssigningId] = useState<number | null>(null);
+  const [assignError, setAssignError] = useState<string | null>(null);
+
   const loadCase = useCallback(() => {
     apiFetch<CaseDetail>(`/api/cases/${id}`)
       .then(setData)
@@ -69,6 +88,30 @@ export default function CasoDetallePage() {
   useEffect(() => {
     loadCase();
   }, [loadCase]);
+
+  useEffect(() => {
+    if (data?.status === "EN_POSTULACION" && (user?.role === "ADVISORY" || user?.role === "ADMIN")) {
+      apiFetch<Applicant[]>(`/api/cases/${id}/applications`)
+        .then(setApplicants)
+        .catch((err) => setApplicantsError(err instanceof Error ? err.message : "Error al cargar postulantes"));
+    }
+  }, [data?.status, user, id]);
+
+  async function handleAssign(applicationId: number) {
+    setAssignError(null);
+    setAssigningId(applicationId);
+    try {
+      await apiFetch(`/api/cases/${id}/assign`, {
+        method: "POST",
+        body: JSON.stringify({ applicationId }),
+      });
+      loadCase();
+    } catch (err) {
+      setAssignError(err instanceof Error ? err.message : "No se pudo asignar el consultor");
+    } finally {
+      setAssigningId(null);
+    }
+  }
 
   async function handleTransition() {
     if (!selectedTarget) return;
@@ -195,6 +238,71 @@ export default function CasoDetallePage() {
               <p className="mt-2 text-sm text-slate-500">Este caso todavía no ha sido clasificado.</p>
             )}
           </section>
+
+          {canTransition && data.status === "EN_POSTULACION" && (
+            <section className="rounded-lg border border-slate-800 bg-slate-900 p-5">
+              <h2 className="font-semibold text-slate-100">Postulantes</h2>
+
+              {applicantsError && (
+                <p className="mt-2 rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">
+                  {applicantsError}
+                </p>
+              )}
+
+              {!applicantsError && !applicants && (
+                <p className="mt-2 text-sm text-slate-500">Cargando postulantes…</p>
+              )}
+
+              {applicants && applicants.length === 0 && (
+                <p className="mt-2 text-sm text-slate-500">
+                  Todavía no hay postulantes para este caso.
+                </p>
+              )}
+
+              {assignError && (
+                <p className="mt-3 rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">
+                  {assignError}
+                </p>
+              )}
+
+              <div className="mt-3 space-y-3">
+                {applicants?.map((a) => (
+                  <div key={a.id} className="rounded-md border border-slate-800 p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-slate-100">{a.consultant.user.fullName}</p>
+                        <p className="text-sm text-slate-500">
+                          {a.consultant.user.email} · {a.consultant.specialty?.label ?? "—"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={assigningId === a.id}
+                        onClick={() => handleAssign(a.id)}
+                        className="rounded-md bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-950 hover:opacity-90 disabled:opacity-50"
+                      >
+                        {assigningId === a.id ? "Asignando…" : "Asignar"}
+                      </button>
+                    </div>
+                    <dl className="mt-3 space-y-2 text-sm">
+                      <div>
+                        <dt className="text-slate-500">Interés</dt>
+                        <dd className="text-slate-300">{a.interestStatement}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">Pertinencia</dt>
+                        <dd className="text-slate-300">{a.relevance}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">Experiencia relevante</dt>
+                        <dd className="text-slate-300">{a.relevantExperience}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {canTransition && (
             <section className="rounded-lg border border-slate-800 bg-slate-900 p-5">
