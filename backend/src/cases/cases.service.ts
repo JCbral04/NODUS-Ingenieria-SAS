@@ -263,6 +263,81 @@ export class CasesService {
     return application;
   }
 
+  async applications(caseId: number) {
+    const caso = await this.prisma.case.findUnique({ where: { id: caseId } });
+    if (!caso) throw new NotFoundException('Caso no existe');
+    return this.prisma.application.findMany({
+      where: { caseId },
+      include: {
+        consultant: {
+          include: {
+            user: { select: { fullName: true, email: true } },
+            specialty: { select: { label: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async assign(caseId: number, actorId: number, applicationId: number) {
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { consultant: { include: { user: true } } },
+    });
+    if (!application || application.caseId !== caseId)
+      throw new NotFoundException('Postulación no existe en este caso');
+
+    const caso = await this.prisma.case.findUnique({ where: { id: caseId } });
+    if (!caso) throw new NotFoundException('Caso no existe');
+    if (caso.status !== 'EN_POSTULACION')
+      throw new UnprocessableEntityException(`El caso no está en postulación (estado: ${caso.status})`);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.application.update({ where: { id: applicationId }, data: { status: 'ASIGNADO' } });
+      await tx.application.updateMany({
+        where: { caseId, id: { not: applicationId }, status: { in: ['POSTULADO', 'EN_EVALUACION'] } },
+        data: { status: 'NO_ASIGNADO' },
+      });
+      await tx.case.update({
+        where: { id: caseId },
+        data: { assignedConsultantId: application.consultantId },
+      });
+    });
+
+    return this.workflow.transition(
+      caseId, 'ASIGNADO', actorId,
+      `Consultor responsable asignado: ${application.consultant.user.fullName}`,
+    );
+  }
+
+  async slaStatus(id: number) {
+    const caso = await this.prisma.case.findUnique({ where: { id } });
+    if (!caso) throw new NotFoundException('Caso no existe');
+
+    const rule = await this.prisma.slaRule.findFirst({
+      where: { fromStatus: caso.status, active: true },
+    });
+    if (!rule) return { caseId: id, status: caso.status, sla: null };
+
+    const changedAt = caso.statusChangedAt.getTime();
+    const now = Date.now();
+    const deadline = changedAt + rule.hours * 3_600_000;
+    const percent = (now - changedAt) / (rule.hours * 3_600_000);
+    const state = now > deadline ? 'VENCIDO' : percent >= 0.8 ? 'POR_VENCER' : 'OK';
+
+    return {
+      caseId: id,
+      status: caso.status,
+      rule: { hours: rule.hours, escalationLevel: rule.escalationLevel },
+      statusChangedAt: caso.statusChangedAt,
+      deadline: new Date(deadline),
+      elapsedHours: Math.round(((now - changedAt) / 3_600_000) * 100) / 100,
+      percent: Math.round(percent * 100),
+      state,
+    };
+  }
+
   private async validateLovSet(
     db: PrismaService | Prisma.TransactionClient,
     checks: Array<[number, string]>,
