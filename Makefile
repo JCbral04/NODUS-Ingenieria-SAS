@@ -1,9 +1,13 @@
 # NODUS — Comandos de orquestación del entorno local
 
-.PHONY: up down logs migrate seed setup
+.PHONY: install up down logs migrate seed setup
 
-up:            ## Levantar base de datos
-	docker compose up -d
+install:       ## Instalar dependencias de backend y frontend
+	cd backend && npm install
+	cd frontend && npm install
+
+up:            ## Levantar base de datos (espera healthcheck)
+	docker compose up -d --wait
 
 down:          ## Detener todo
 	docker compose down
@@ -17,4 +21,4 @@ migrate:       ## Ejecutar migraciones Prisma
 seed:          ## Cargar datos demo
 	cd backend && npx prisma db seed
 
-setup: up migrate seed   ## Entorno completo: DB + migraciones + seed
+setup: install up migrate seed   ## Entorno completo: dependencias + DB + migraciones + seed
