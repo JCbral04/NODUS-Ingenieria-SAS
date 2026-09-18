@@ -12,6 +12,7 @@ import { PrismaService } from '../prisma.service';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { CreateClassificationDto } from './dto/classification.dto';
 import { ApplyDto } from './dto/apply.dto';
+import { DecisionDto } from './dto/decision.dto';
 import { WorkflowService } from '../workflow/workflow.service';
 
 @Injectable()
@@ -309,6 +310,34 @@ export class CasesService {
       caseId, 'ASIGNADO', actorId,
       `Consultor responsable asignado: ${application.consultant.user.fullName}`,
     );
+  }
+
+  async decide(userId: number, caseId: number, dto: DecisionDto) {
+    const caso = await this.prisma.case.findUnique({
+      where: { id: caseId },
+      include: { contact: true },
+    });
+    if (!caso) throw new NotFoundException('Caso no existe');
+    if (caso.contact?.userId !== userId)
+      throw new ForbiddenException('Solo el contacto de la empresa decide sobre la propuesta');
+    if (caso.status !== 'PROPUESTA_ENVIADA' && caso.status !== 'EN_DECISION_CLIENTE')
+      throw new UnprocessableEntityException(`No hay propuesta en decisión (estado: ${caso.status})`);
+
+    const decision = await this.prisma.caseDecision.create({
+      data: { caseId, type: dto.type, notes: dto.notes ?? null, decidedById: userId },
+    });
+
+    if (caso.status === 'PROPUESTA_ENVIADA')
+      await this.workflow.transition(caseId, 'EN_DECISION_CLIENTE', userId, 'Cliente abre período de decisión');
+
+    if (dto.type === 'ACEPTAR') {
+      await this.workflow.transition(caseId, 'PROPUESTA_ACEPTADA', userId, 'Cliente acepta la propuesta');
+      await this.workflow.transition(caseId, 'PENDIENTE_CONTRATACION', userId, 'Pasa a formalización contractual');
+    } else {
+      await this.workflow.transition(caseId, 'CERRADO_SIN_CONTRATACION', userId, `No continúa: ${dto.notes ?? 'motivo no especificado'}`);
+    }
+
+    return { decision, case: await this.prisma.case.findUnique({ where: { id: caseId } }) };
   }
 
   async slaStatus(id: number) {
