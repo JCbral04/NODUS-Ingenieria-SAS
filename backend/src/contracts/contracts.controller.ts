@@ -28,8 +28,8 @@ export class ContractsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADVISORY', 'ADMIN')
   @Patch('items/:itemId')
-  complete(@Param('itemId', ParseIntPipe) itemId: number, @Body() dto: CompleteItemDto) {
-    return this.contracts.completeItem(itemId, dto.evidence);
+  complete(@Param('id', ParseIntPipe) caseId: number, @Param('itemId', ParseIntPipe) itemId: number, @Body() dto: CompleteItemDto) {
+    return this.contracts.completeItem(caseId, itemId, dto.evidence);
   }
 
   @ApiBearerAuth()

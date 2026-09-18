@@ -38,7 +38,7 @@ export class ProposalsService {
       },
     });
 
-    if (caso.status === 'ASIGNADO')
+    if (caso.status === 'ASIGNADO' || caso.status === 'AJUSTES_PROPUESTA')
       await this.workflow.transition(caseId, 'PROPUESTA_EN_DISENO', userId, `Propuesta v${version} en diseño`);
     return proposal;
   }

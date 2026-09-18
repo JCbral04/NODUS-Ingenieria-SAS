@@ -25,9 +25,10 @@ export class ContractsService {
     return items;
   }
 
-  async completeItem(itemId: number, evidence?: string) {
+  async completeItem(caseId: number, itemId: number, evidence?: string) {
     const item = await this.prisma.contractChecklistItem.findUnique({ where: { id: itemId } });
-    if (!item) throw new NotFoundException('Ítem no existe');
+    if (!item || item.caseId !== caseId)
+      throw new NotFoundException('Ítem no existe en este caso');
     return this.prisma.contractChecklistItem.update({
       where: { id: itemId },
       data: { status: 'COMPLETADO', completedAt: new Date(), evidence: evidence ?? null },
