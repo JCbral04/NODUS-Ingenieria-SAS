@@ -9,10 +9,15 @@ import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma.service';
 import { OnboardingDto } from './dto/onboarding.dto';
+import { CreateClassificationDto } from './dto/classification.dto';
+import { WorkflowService } from '../workflow/workflow.service';
 
 @Injectable()
 export class CasesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private workflow: WorkflowService,
+  ) {}
 
   async createWithOnboarding(dto: OnboardingDto) {
     if (!dto.acceptsTerms) throw new BadRequestException('Debe aceptar los términos');
@@ -54,7 +59,11 @@ export class CasesService {
         },
       });
 
-      await this.validateLov(tx, dto);
+      await this.validateLovSet(tx, [
+        [dto.areaId, 'AREA_PROBLEMA'],
+        [dto.urgencyId, 'NIVEL_URGENCIA'],
+        [dto.impactId, 'NIVEL_IMPACTO'],
+      ]);
 
       const last = await tx.case.findFirst({ orderBy: { id: 'desc' }, select: { caseNumber: true } });
       const seq = last ? parseInt(last.caseNumber.replace('CAS-', ''), 10) + 1 : 1;
@@ -79,6 +88,40 @@ export class CasesService {
       });
       return { caseNumber: caso.caseNumber, status: caso.status, email: user.email };
     });
+  }
+
+  async classify(caseId: number, actorId: number, dto: CreateClassificationDto) {
+    const caso = await this.prisma.case.findUnique({ where: { id: caseId } });
+    if (!caso) throw new NotFoundException('Caso no existe');
+    if (caso.status !== 'EN_REVISION')
+      throw new UnprocessableEntityException(`Solo se clasifica en EN_REVISION (estado actual: ${caso.status})`);
+
+    await this.validateLovSet(this.prisma, [
+      [dto.areaId, 'AREA_PROBLEMA'],
+      [dto.interventionTypeId, 'TIPO_INTERVENCION'],
+      [dto.complexityId, 'NIVEL_COMPLEJIDAD'],
+      [dto.impactId, 'NIVEL_IMPACTO'],
+    ]);
+
+    const classification = await this.prisma.caseClassification.create({
+      data: {
+        caseId,
+        areaId: dto.areaId,
+        interventionTypeId: dto.interventionTypeId,
+        complexityId: dto.complexityId,
+        impactId: dto.impactId,
+        eligibilityNotes: dto.notes ?? null,
+        isEligible: dto.isEligible,
+        classifiedById: actorId,
+      },
+    });
+
+    let updated = caso;
+    if (dto.isEligible) {
+      updated = await this.workflow.transition(caseId, 'CLASIFICADO', actorId, 'Caso habilitado tras clasificación T2');
+    }
+
+    return { classification, case: updated };
   }
 
   async listForUser(userId: number, role: string) {
@@ -130,24 +173,22 @@ export class CasesService {
     return { ...caso, auditLog };
   }
 
-  private async validateLov(
-    tx: Prisma.TransactionClient,
-    ids: { areaId: number; urgencyId: number; impactId: number },
+  private async validateLovSet(
+    db: PrismaService | Prisma.TransactionClient,
+    checks: Array<[number, string]>,
   ) {
-    const values = await tx.lovValue.findMany({
-      where: { id: { in: [ids.areaId, ids.urgencyId, ids.impactId] } },
+    const ids = checks.map(([id]) => id);
+    const values = await db.lovValue.findMany({
+      where: { id: { in: ids } },
       include: { category: true },
     });
     const byId = new Map(values.map((v) => [v.id, v]));
-    const expect = (id: number, category: string) => {
+    for (const [id, category] of checks) {
       const v = byId.get(id);
       if (!v) throw new UnprocessableEntityException(`Valor LOV ${id} no existe`);
       if (v.category.code !== category)
         throw new UnprocessableEntityException(`Valor LOV ${id} no pertenece a ${category}`);
       if (!v.active) throw new UnprocessableEntityException(`Valor LOV ${id} está inactivo`);
-    };
-    expect(ids.areaId, 'AREA_PROBLEMA');
-    expect(ids.urgencyId, 'NIVEL_URGENCIA');
-    expect(ids.impactId, 'NIVEL_IMPACTO');
+    }
   }
 }

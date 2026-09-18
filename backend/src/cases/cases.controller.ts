@@ -2,9 +2,12 @@ import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Req, UseGuards
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CasesService } from './cases.service';
 import { OnboardingDto } from './dto/onboarding.dto';
+import { CreateClassificationDto } from './dto/classification.dto';
 import { WorkflowService } from '../workflow/workflow.service';
 import { TransitionDto } from '../workflow/dto/transition.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('cases')
 @Controller('cases')
@@ -32,6 +35,19 @@ export class CasesController {
   @Get(':id')
   detail(@Param('id', ParseIntPipe) id: number) {
     return this.cases.detail(id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADVISORY', 'ADMIN')
+  @ApiOperation({ summary: 'Clasificación T2 con LOV (solo Advisory) → CLASIFICADO si es elegible (RF-015–025)' })
+  @Post(':id/classification')
+  classify(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateClassificationDto,
+    @Req() req: { user: { sub: number } },
+  ) {
+    return this.cases.classify(id, req.user.sub, dto);
   }
 
   @ApiBearerAuth()
