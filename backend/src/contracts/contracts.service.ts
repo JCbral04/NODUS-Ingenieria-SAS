@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { WorkflowService } from '../workflow/workflow.service';
 
@@ -9,20 +10,24 @@ export class ContractsService {
     private workflow: WorkflowService,
   ) {}
 
-  async items(caseId: number) {
-    let items = await this.prisma.contractChecklistItem.findMany({
-      where: { caseId },
-      orderBy: { id: 'asc' },
-    });
-    if (items.length === 0) {
-      const templates = await this.prisma.contractChecklistItem.findMany({ where: { caseId: null } });
-      if (!templates.length) return [];
+  private async ensureItems(caseId: number) {
+    const existing = await this.prisma.contractChecklistItem.count({ where: { caseId } });
+    if (existing > 0) return;
+    const templates = await this.prisma.contractChecklistItem.findMany({ where: { caseId: null } });
+    if (!templates.length) return;
+    try {
       await this.prisma.contractChecklistItem.createMany({
         data: templates.map((t) => ({ caseId, label: t.label, responsible: t.responsible })),
       });
-      items = await this.prisma.contractChecklistItem.findMany({ where: { caseId }, orderBy: { id: 'asc' } });
+    } catch (e) {
+      // Race: otro request materializó primero (unique caseId+label) — idempotente
+      if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002')) throw e;
     }
-    return items;
+  }
+
+  async items(caseId: number) {
+    await this.ensureItems(caseId);
+    return this.prisma.contractChecklistItem.findMany({ where: { caseId }, orderBy: { id: 'asc' } });
   }
 
   async completeItem(caseId: number, itemId: number, evidence?: string) {
@@ -40,6 +45,8 @@ export class ContractsService {
     if (!caso) throw new NotFoundException('Caso no existe');
     if (caso.status !== 'PENDIENTE_CONTRATACION')
       throw new UnprocessableEntityException(`El caso no está pendiente de contratación (estado: ${caso.status})`);
+
+    await this.ensureItems(caseId); // ← RF-070: el checklist SIEMPRE existe antes de evaluar
 
     const pending = await this.prisma.contractChecklistItem.findMany({
       where: { caseId, status: { not: 'COMPLETADO' } },

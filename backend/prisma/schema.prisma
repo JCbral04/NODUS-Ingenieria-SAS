@@ -467,6 +467,7 @@ model ContractChecklistItem {
   evidence     String?         // referencia a Document o nota
   createdAt    DateTime        @default(now())
 
+  @@unique([caseId, label])
   @@index([caseId])
 }
 

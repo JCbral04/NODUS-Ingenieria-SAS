@@ -55,6 +55,10 @@ export class ProposalsService {
     const proposal = await this.prisma.proposal.findUnique({ where: { id: proposalId } });
     if (!proposal) throw new NotFoundException('Propuesta no existe');
 
+    const caso = await this.prisma.case.findUnique({ where: { id: proposal.caseId } });
+    if (caso.status !== 'PROPUESTA_EN_DISENO')
+      throw new UnprocessableEntityException(`El caso no está en diseño de propuesta (estado: ${caso.status})`);
+
     const review = await this.prisma.proposalReview.create({
       data: {
         proposalId, reviewerId: userId,
@@ -64,9 +68,14 @@ export class ProposalsService {
         adjustmentRequest: dto.adjustmentRequest ?? null,
       },
     });
-    if (dto.approved)
-      await this.workflow.transition(proposal.caseId, 'PROPUESTA_LISTA_QA', userId, `QA aprobó propuesta v${proposal.version}`);
-    return review;
+    try {
+      if (dto.approved)
+        await this.workflow.transition(proposal.caseId, 'PROPUESTA_LISTA_QA', userId, `QA aprobó propuesta v${proposal.version}`);
+      return review;
+    } catch (e) {
+      await this.prisma.proposalReview.delete({ where: { id: review.id } }).catch(() => undefined);
+      throw e;
+    }
   }
 
   async send(userId: number, proposalId: number) {
@@ -78,7 +87,17 @@ export class ProposalsService {
     if (!proposal.reviews[0]?.approved)
       throw new UnprocessableEntityException('La propuesta requiere QA aprobado antes de enviarse (RF-055)');
 
+    const caso = await this.prisma.case.findUnique({ where: { id: proposal.caseId } });
+    if (caso.status !== 'PROPUESTA_LISTA_QA')
+      throw new UnprocessableEntityException(`El caso no está listo para envío (estado: ${caso.status})`);
+
+    const previousStatus = proposal.status;
     await this.prisma.proposal.update({ where: { id: proposalId }, data: { status: 'ENVIADA' } });
-    return this.workflow.transition(proposal.caseId, 'PROPUESTA_ENVIADA', userId, `Propuesta v${proposal.version} enviada al cliente`);
+    try {
+      return await this.workflow.transition(proposal.caseId, 'PROPUESTA_ENVIADA', userId, `Propuesta v${proposal.version} enviada al cliente`);
+    } catch (e) {
+      await this.prisma.proposal.update({ where: { id: proposalId }, data: { status: previousStatus } }).catch(() => undefined);
+      throw e;
+    }
   }
 }
