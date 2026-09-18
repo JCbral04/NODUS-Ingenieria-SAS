@@ -1,4 +1,4 @@
-&lt;div align="center"&gt;
+<div align="center">
 
 # NODUS Ingeniería SAS
 
@@ -6,7 +6,7 @@
 
 Prueba técnica — Ingenierías SAS (Colombia) · Septiembre 2026
 
-&lt;/div&gt;
+</div>
 
 ---
 
