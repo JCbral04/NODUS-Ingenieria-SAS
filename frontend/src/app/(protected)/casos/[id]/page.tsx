@@ -46,6 +46,13 @@ interface Applicant {
   };
 }
 
+interface SlaInfo {
+  state?: "OK" | "POR_VENCER" | "VENCIDO";
+  elapsedHours?: number;
+  percent?: number;
+  sla?: null;
+}
+
 interface CaseDetail {
   id: number;
   caseNumber: string;
@@ -60,6 +67,13 @@ interface CaseDetail {
   impact: LovLabel;
   classifications: Classification[];
   stateHistory: StateHistoryEntry[];
+}
+
+function slaColor(state?: string) {
+  if (state === "VENCIDO") return "bg-red-900/40 text-red-300";
+  if (state === "POR_VENCER") return "bg-amber-900/40 text-amber-300";
+  if (state === "OK") return "bg-emerald-900/40 text-emerald-300";
+  return "";
 }
 
 export default function CasoDetallePage() {
@@ -79,6 +93,7 @@ export default function CasoDetallePage() {
   const [applicantsError, setApplicantsError] = useState<string | null>(null);
   const [assigningId, setAssigningId] = useState<number | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
+  const [sla, setSla] = useState<SlaInfo | null>(null);
   const [clsAreaId, setClsAreaId] = useState("");
   const [clsInterventionTypeId, setClsInterventionTypeId] = useState("");
   const [clsComplexityId, setClsComplexityId] = useState("");
@@ -105,6 +120,13 @@ export default function CasoDetallePage() {
         .catch((err) => setApplicantsError(err instanceof Error ? err.message : "Error al cargar postulantes"));
     }
   }, [data?.status, user, id]);
+
+  useEffect(() => {
+    if (!data) return;
+    apiFetch<SlaInfo>(`/api/cases/${id}/sla`)
+      .then(setSla)
+      .catch(() => setSla(null));
+  }, [data?.status, id]);
 
   async function handleAssign(applicationId: number) {
     setAssignError(null);
@@ -203,6 +225,13 @@ export default function CasoDetallePage() {
         <span className={`rounded-full px-3 py-1 text-sm font-medium ${statusColor(data.status)}`}>
           {statusLabel(data.status)}
         </span>
+        {sla?.state && (
+          <span className={`ml-2 rounded-full px-3 py-1 text-sm font-medium ${slaColor(sla.state)}`}>
+            SLA: {sla.state}
+            {typeof sla.percent === "number" && ` (${sla.percent}%)`}
+            {typeof sla.elapsedHours === "number" && ` · ${sla.elapsedHours}h`}
+          </span>
+        )}
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
