@@ -152,9 +152,19 @@ obligatorias: `DATABASE_URL` y `JWT_SECRET`.
 
 ## 8. Módulos implementados y trazabilidad
 
-Cada requerimiento de la matriz funcional (`RF-001` … `RF-087`, `RT-001` …
-`RT-023`) se mapea a endpoint(s) y pantalla(s) en
-[`docs/trazabilidad.md`](docs/trazabilidad.md).
+Módulos con endpoints reales en `main`, verificados con `curl` en cada PR:
+
+| Módulo | Endpoints | PR |
+|---|---|---|
+| Auth | `POST /api/auth/login` · `POST /api/auth/refresh` · guards RBAC (5 roles) · bitácora de login en `AuditLog` | [#15](https://github.com/JCbral04/NODUS-Ingenieria-SAS/pull/15) |
+| Cases — Onboarding T1 | `POST /api/cases` (público): crea empresa + contacto Mipyme + caso en una sola transacción Prisma, con validación anti-duplicados (correo/dominio/nombre/NIT → 409) y de integridad LOV (→ 422) | [#34](https://github.com/JCbral04/NODUS-Ingenieria-SAS/pull/34) |
+| Workflow | `PATCH /api/cases/:id/status`: motor de 16 estados, único punto de cambio de estado, escribe `CaseStateHistory` + `AuditLog` en la misma transacción | [#34](https://github.com/JCbral04/NODUS-Ingenieria-SAS/pull/34) |
+| Frontend — Layout y login | Sidebar (Dashboard, Casos, Empresas, Consultores, Workflow, Documentos, SLA) + topbar, login conectado al endpoint real de auth | [#16](https://github.com/JCbral04/NODUS-Ingenieria-SAS/pull/16) |
+
+Cada requerimiento de la matriz funcional (`RF-001`…`RF-087`, `RT-001`…`RT-023`) se mapea a endpoint(s) y pantalla(s) en [`docs/trazabilidad.md`](https://github.com/JCbral04/NODUS-Ingenieria-SAS/blob/main/docs/trazabilidad.md), que se actualiza con cada PR mergeado.
+
+**Pendiente (en progreso):** bolsa de consultores — publicación con elegibilidad, postulación T3C y asignación de responsable ([issues #21](https://github.com/JCbral04/NODUS-Ingenieria-SAS/issues/21), [#22](https://github.com/JCbral04/NODUS-Ingenieria-SAS/issues/22)).
+
 
 ## 9. Workflow del caso (16 estados)
 
@@ -169,19 +179,13 @@ Ramas: EN DECISIÓN → CERRADO SIN CONTRATACIÓN · EN REVISIÓN → rechazo do
 
 ## 10. Alcance y justificación del MVP
 
-**Incluido (P0):** autenticación y RBAC · empresa única y onboarding T1 ·
-workflow completo con bitácora automática · debida diligencia con LOV ·
-bolsa con elegibilidad, postulación T3C y asignación de único responsable ·
-propuesta TP4C versionada con QA TP4H · decisión del cliente TP6 ·
-contratación con checklist bloqueante T7 · ejecución (agenda, hitos,
-entregables) y cierre con acta · SLA parametrizables y notificaciones in-app ·
-dashboard básico.
+**Ya implementado en `main`:** autenticación y RBAC (5 roles) · empresa única y onboarding T1 · workflow completo (16 estados) con bitácora automática (`AuditLog` + `CaseStateHistory`) · layout y login del frontend conectados al backend real.
 
-**Fase 2 (cortado explícitamente, alineado con la matriz del cliente):**
-peer review avanzado, reputación/estrellas de consultores, videollamadas
-integradas, WhatsApp, firma electrónica, analítica BI.
+**Pendiente dentro del alcance P0 de este sprint:** bolsa interna (elegibilidad, postulación T3C, asignación de responsable) y su pantalla de transición de estado para Advisory.
 
-Justificación completa: [ADR-002](docs/adr/ADR-002-alcance-mvp-priorizado.md).
+**Fase 2 (cortado explícitamente por plazo):** propuestas (UI, versionamiento, revisión metodológica), formalización y contratación, ejecución y seguimiento, cierre del caso, peer review avanzado, reputación de consultores, videollamadas integradas, WhatsApp, firma electrónica, analítica BI.
+
+Justificación completa: [ADR-002](https://github.com/JCbral04/NODUS-Ingenieria-SAS/blob/main/docs/adr/ADR-002-alcance-mvp-priorizado.md) (alcance priorizado original) y [ADR-003](https://github.com/JCbral04/NODUS-Ingenieria-SAS/blob/main/docs/adr/ADR-003-reduccion-alcance-mvp-plazo.md) (recorte real por plazo de 5 días).
 
 ## 11. Evidencias de funcionamiento
 
