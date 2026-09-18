@@ -227,7 +227,8 @@ analítica BI. Los módulos del dominio ya existen como esqueleto NestJS.
 - **Revisiones de código**: 3 rounds de revisión con hallazgos de robustez
   resueltos (bypass RF-070, atomicidad con compensación, integridad de FKs).
 - **Evidencias**: [`docs/evidencias/`](docs/evidencias/) — capturas del flujo
-  end-to-end por rol y video demo.
+  end-to-end por rol; las verificaciones reproducibles (curl) de cada módulo
+  están documentadas en el cuerpo de cada PR.
 
 ## 12. Equipo
 
