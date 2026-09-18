@@ -5,6 +5,7 @@ import { OnboardingDto } from './dto/onboarding.dto';
 import { CreateClassificationDto } from './dto/classification.dto';
 import { ApplyDto } from './dto/apply.dto';
 import { AssignDto } from './dto/assign.dto';
+import { DecisionDto } from './dto/decision.dto';
 import { WorkflowService } from '../workflow/workflow.service';
 import { TransitionDto } from '../workflow/dto/transition.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -111,6 +112,19 @@ export class CasesController {
     @Req() req: { user: { sub: number } },
   ) {
     return this.cases.classify(id, req.user.sub, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('MIPYME')
+  @ApiOperation({ summary: 'Decisión del cliente sobre la propuesta: ACEPTAR / NO_CONTINUAR (RF-057–065)' })
+  @Post(':id/decision')
+  decide(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: DecisionDto,
+    @Req() req: { user: { sub: number } },
+  ) {
+    return this.cases.decide(req.user.sub, id, dto);
   }
 
   @ApiBearerAuth()
