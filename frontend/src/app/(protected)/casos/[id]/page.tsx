@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { statusLabel, statusColor } from "@/lib/case-status";
 import { TRANSITIONS } from "@/lib/transitions";
+import { AREAS, TIPOS_INTERVENCION, COMPLEJIDADES, IMPACTOS } from "@/lib/lov";
 
 interface LovLabel {
   label: string;
@@ -31,6 +32,27 @@ interface Classification {
   createdAt: string;
 }
 
+interface Applicant {
+  id: number;
+  status: string;
+  interestStatement: string;
+  relevance: string;
+  relevantExperience: string;
+  isAvailable: boolean;
+  createdAt: string;
+  consultant: {
+    user: { fullName: string; email: string };
+    specialty: { label: string } | null;
+  };
+}
+
+interface SlaInfo {
+  state?: "OK" | "POR_VENCER" | "VENCIDO";
+  elapsedHours?: number;
+  percent?: number;
+  sla?: null;
+}
+
 interface CaseDetail {
   id: number;
   caseNumber: string;
@@ -47,6 +69,13 @@ interface CaseDetail {
   stateHistory: StateHistoryEntry[];
 }
 
+function slaColor(state?: string) {
+  if (state === "VENCIDO") return "bg-red-900/40 text-red-300";
+  if (state === "POR_VENCER") return "bg-amber-900/40 text-amber-300";
+  if (state === "OK") return "bg-emerald-900/40 text-emerald-300";
+  return "";
+}
+
 export default function CasoDetallePage() {
   const params = useParams();
   const id = params.id as string;
@@ -60,6 +89,20 @@ export default function CasoDetallePage() {
   const [transitionError, setTransitionError] = useState<string | null>(null);
   const [transitioning, setTransitioning] = useState(false);
 
+  const [applicants, setApplicants] = useState<Applicant[] | null>(null);
+  const [applicantsError, setApplicantsError] = useState<string | null>(null);
+  const [assigningId, setAssigningId] = useState<number | null>(null);
+  const [assignError, setAssignError] = useState<string | null>(null);
+  const [sla, setSla] = useState<SlaInfo | null>(null);
+  const [clsAreaId, setClsAreaId] = useState("");
+  const [clsInterventionTypeId, setClsInterventionTypeId] = useState("");
+  const [clsComplexityId, setClsComplexityId] = useState("");
+  const [clsImpactId, setClsImpactId] = useState("");
+  const [clsIsEligible, setClsIsEligible] = useState(true);
+  const [clsNotes, setClsNotes] = useState("");
+  const [clsError, setClsError] = useState<string | null>(null);
+  const [clsSubmitting, setClsSubmitting] = useState(false);
+
   const loadCase = useCallback(() => {
     apiFetch<CaseDetail>(`/api/cases/${id}`)
       .then(setData)
@@ -69,6 +112,37 @@ export default function CasoDetallePage() {
   useEffect(() => {
     loadCase();
   }, [loadCase]);
+
+  useEffect(() => {
+    if (data?.status === "EN_POSTULACION" && (user?.role === "ADVISORY" || user?.role === "ADMIN")) {
+      apiFetch<Applicant[]>(`/api/cases/${id}/applications`)
+        .then(setApplicants)
+        .catch((err) => setApplicantsError(err instanceof Error ? err.message : "Error al cargar postulantes"));
+    }
+  }, [data?.status, user, id]);
+
+  useEffect(() => {
+    if (!data) return;
+    apiFetch<SlaInfo>(`/api/cases/${id}/sla`)
+      .then(setSla)
+      .catch(() => setSla(null));
+  }, [data?.status, id]);
+
+  async function handleAssign(applicationId: number) {
+    setAssignError(null);
+    setAssigningId(applicationId);
+    try {
+      await apiFetch(`/api/cases/${id}/assign`, {
+        method: "POST",
+        body: JSON.stringify({ applicationId }),
+      });
+      loadCase();
+    } catch (err) {
+      setAssignError(err instanceof Error ? err.message : "No se pudo asignar el consultor");
+    } finally {
+      setAssigningId(null);
+    }
+  }
 
   async function handleTransition() {
     if (!selectedTarget) return;
@@ -86,6 +160,39 @@ export default function CasoDetallePage() {
       setTransitionError(err instanceof Error ? err.message : "No se pudo cambiar el estado");
     } finally {
       setTransitioning(false);
+    }
+  }
+
+  async function handleClassify() {
+    if (!clsAreaId || !clsInterventionTypeId || !clsComplexityId || !clsImpactId) {
+      setClsError("Completa las 4 categorías antes de clasificar.");
+      return;
+    }
+    setClsError(null);
+    setClsSubmitting(true);
+    try {
+      await apiFetch(`/api/cases/${id}/classification`, {
+        method: "POST",
+        body: JSON.stringify({
+          areaId: Number(clsAreaId),
+          interventionTypeId: Number(clsInterventionTypeId),
+          complexityId: Number(clsComplexityId),
+          impactId: Number(clsImpactId),
+          isEligible: clsIsEligible,
+          notes: clsNotes || undefined,
+        }),
+      });
+      setClsAreaId("");
+      setClsInterventionTypeId("");
+      setClsComplexityId("");
+      setClsImpactId("");
+      setClsIsEligible(true);
+      setClsNotes("");
+      loadCase();
+    } catch (err) {
+      setClsError(err instanceof Error ? err.message : "No se pudo registrar la clasificación");
+    } finally {
+      setClsSubmitting(false);
     }
   }
 
@@ -118,6 +225,13 @@ export default function CasoDetallePage() {
         <span className={`rounded-full px-3 py-1 text-sm font-medium ${statusColor(data.status)}`}>
           {statusLabel(data.status)}
         </span>
+        {sla?.state && (
+          <span className={`ml-2 rounded-full px-3 py-1 text-sm font-medium ${slaColor(sla.state)}`}>
+            SLA: {sla.state}
+            {typeof sla.percent === "number" && ` (${sla.percent}%)`}
+            {typeof sla.elapsedHours === "number" && ` · ${sla.elapsedHours}h`}
+          </span>
+        )}
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -163,6 +277,96 @@ export default function CasoDetallePage() {
             </dl>
           </section>
 
+          {canTransition && data.status === "EN_REVISION" && (
+            <section className="rounded-lg border border-slate-800 bg-slate-900 p-5">
+              <h2 className="font-semibold text-slate-100">Clasificar caso</h2>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-slate-400">Área</label>
+                  <select
+                    value={clsAreaId}
+                    onChange={(e) => setClsAreaId(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100"
+                  >
+                    <option value="">Selecciona…</option>
+                    {AREAS.map((a) => (
+                      <option key={a.id} value={a.id}>{a.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400">Tipo de intervención</label>
+                  <select
+                    value={clsInterventionTypeId}
+                    onChange={(e) => setClsInterventionTypeId(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100"
+                  >
+                    <option value="">Selecciona…</option>
+                    {TIPOS_INTERVENCION.map((t) => (
+                      <option key={t.id} value={t.id}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400">Complejidad</label>
+                  <select
+                    value={clsComplexityId}
+                    onChange={(e) => setClsComplexityId(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100"
+                  >
+                    <option value="">Selecciona…</option>
+                    {COMPLEJIDADES.map((c) => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400">Impacto</label>
+                  <select
+                    value={clsImpactId}
+                    onChange={(e) => setClsImpactId(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100"
+                  >
+                    <option value="">Selecciona…</option>
+                    {IMPACTOS.map((i) => (
+                      <option key={i.id} value={i.id}>{i.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <label className="mt-3 flex items-center gap-2 text-sm text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={clsIsEligible}
+                  onChange={(e) => setClsIsEligible(e.target.checked)}
+                />
+                El caso es elegible para continuar el flujo
+              </label>
+
+              <textarea
+                value={clsNotes}
+                onChange={(e) => setClsNotes(e.target.value)}
+                placeholder="Notas (opcional)"
+                rows={2}
+                className="mt-3 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-500"
+              />
+
+              {clsError && (
+                <p className="mt-3 rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">{clsError}</p>
+              )}
+
+              <button
+                type="button"
+                disabled={clsSubmitting}
+                onClick={handleClassify}
+                className="mt-3 rounded-md bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-950 hover:opacity-90 disabled:opacity-50"
+              >
+                {clsSubmitting ? "Guardando…" : "Registrar clasificación"}
+              </button>
+            </section>
+          )}
+
           <section className="rounded-lg border border-slate-800 bg-slate-900 p-5">
             <h2 className="font-semibold text-slate-100">Clasificación actual</h2>
             {currentClassification ? (
@@ -195,6 +399,71 @@ export default function CasoDetallePage() {
               <p className="mt-2 text-sm text-slate-500">Este caso todavía no ha sido clasificado.</p>
             )}
           </section>
+
+          {canTransition && data.status === "EN_POSTULACION" && (
+            <section className="rounded-lg border border-slate-800 bg-slate-900 p-5">
+              <h2 className="font-semibold text-slate-100">Postulantes</h2>
+
+              {applicantsError && (
+                <p className="mt-2 rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">
+                  {applicantsError}
+                </p>
+              )}
+
+              {!applicantsError && !applicants && (
+                <p className="mt-2 text-sm text-slate-500">Cargando postulantes…</p>
+              )}
+
+              {applicants && applicants.length === 0 && (
+                <p className="mt-2 text-sm text-slate-500">
+                  Todavía no hay postulantes para este caso.
+                </p>
+              )}
+
+              {assignError && (
+                <p className="mt-3 rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">
+                  {assignError}
+                </p>
+              )}
+
+              <div className="mt-3 space-y-3">
+                {applicants?.map((a) => (
+                  <div key={a.id} className="rounded-md border border-slate-800 p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-slate-100">{a.consultant.user.fullName}</p>
+                        <p className="text-sm text-slate-500">
+                          {a.consultant.user.email} · {a.consultant.specialty?.label ?? "—"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={assigningId === a.id}
+                        onClick={() => handleAssign(a.id)}
+                        className="rounded-md bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-950 hover:opacity-90 disabled:opacity-50"
+                      >
+                        {assigningId === a.id ? "Asignando…" : "Asignar"}
+                      </button>
+                    </div>
+                    <dl className="mt-3 space-y-2 text-sm">
+                      <div>
+                        <dt className="text-slate-500">Interés</dt>
+                        <dd className="text-slate-300">{a.interestStatement}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">Pertinencia</dt>
+                        <dd className="text-slate-300">{a.relevance}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">Experiencia relevante</dt>
+                        <dd className="text-slate-300">{a.relevantExperience}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {canTransition && (
             <section className="rounded-lg border border-slate-800 bg-slate-900 p-5">
