@@ -93,7 +93,6 @@ export default function CasoDetallePage() {
   const [applicantsError, setApplicantsError] = useState<string | null>(null);
   const [assigningId, setAssigningId] = useState<number | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
-
   const [sla, setSla] = useState<SlaInfo | null>(null);
   const [clsAreaId, setClsAreaId] = useState("");
   const [clsInterventionTypeId, setClsInterventionTypeId] = useState("");
