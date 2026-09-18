@@ -4,6 +4,7 @@ import { CasesService } from './cases.service';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { CreateClassificationDto } from './dto/classification.dto';
 import { ApplyDto } from './dto/apply.dto';
+import { AssignDto } from './dto/assign.dto';
 import { WorkflowService } from '../workflow/workflow.service';
 import { TransitionDto } from '../workflow/dto/transition.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -60,6 +61,36 @@ export class CasesController {
     @Req() req: { user: { sub: number } },
   ) {
     return this.cases.apply(req.user.sub, id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADVISORY', 'ADMIN')
+  @ApiOperation({ summary: 'Postulaciones del caso con datos del consultor (RF-031)' })
+  @Get(':id/applications')
+  applications(@Param('id', ParseIntPipe) id: number) {
+    return this.cases.applications(id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADVISORY', 'ADMIN')
+  @ApiOperation({ summary: 'Asignación del único responsable principal (RF-032/033/034)' })
+  @Post(':id/assign')
+  assign(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AssignDto,
+    @Req() req: { user: { sub: number } },
+  ) {
+    return this.cases.assign(id, req.user.sub, dto.applicationId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Estado SLA del caso: OK / POR_VENCER / VENCIDO (RT-006–009)' })
+  @Get(':id/sla')
+  sla(@Param('id', ParseIntPipe) id: number) {
+    return this.cases.slaStatus(id);
   }
 
   @ApiBearerAuth()
