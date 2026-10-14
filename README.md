@@ -146,6 +146,21 @@ curl http://localhost:3001/api/docs      # Swagger UI con todos los endpoints
 &gt; `docker-compose.yml` a `"5433:5432"` y ajusta `DATABASE_URL` en
 &gt; `backend/.env` al mismo puerto.
 
+### Despliegue en producción (complementario al repositorio)
+
+Además de la ejecución local, NODUS cuenta con una versión desplegada y
+funcional:
+
+| Pieza | URL | Plataforma |
+|---|---|---|
+| **Aplicación web** | https://nodus-ingenieria-sas-gamma.vercel.app | Vercel (Next.js 16) |
+| **API REST** | https://nodus-ingenieria-sas-production.up.railway.app | Railway (NestJS) |
+| **Documentación Swagger** | https://nodus-ingenieria-sas-production.up.railway.app/api/docs | — |
+| **Base de datos** | PostgreSQL serverless | Neon |
+
+La raíz del dominio web redirige a `/login`. Los usuarios demo (§7) funcionan
+en producción con los mismos datos sembrados (`Nodus2026*`).
+
 ## 6. Variables de entorno
 
 Documentadas en `backend/.env.example` y `frontend/.env.example`. Las
