@@ -1,4 +1,26 @@
-import { UnprocessableEntityException } from '@nestjs/common';
+jest.mock('@nestjs/common', () => {
+  class HttpException extends Error {
+    constructor(message: unknown, public status: number) {
+      super(typeof message === 'string' ? message : JSON.stringify(message));
+    }
+  }
+  const make = (status: number) =>
+    class extends HttpException {
+      constructor(m: unknown) {
+        super(m, status);
+      }
+    };
+  return {
+    Injectable: () => (target: unknown) => target,
+    NotFoundException: make(404),
+    BadRequestException: make(400),
+    UnauthorizedException: make(401),
+    ForbiddenException: make(403),
+    ConflictException: make(409),
+    UnprocessableEntityException: make(422),
+  };
+});
+
 import { ContractsService } from './contracts.service';
 
 describe('ContractsService.authorize (RF-070)', () => {
@@ -20,7 +42,7 @@ describe('ContractsService.authorize (RF-070)', () => {
       .mockResolvedValueOnce([{ id: 1, label: 'Firma', status: 'PENDIENTE' }]);
     prisma.contractChecklistItem.createMany.mockResolvedValue({ count: 1 });
 
-    await expect(service.authorize(7, 2)).rejects.toThrow(UnprocessableEntityException);
+    await expect(service.authorize(7, 2)).rejects.toMatchObject({ status: 422 });
     expect(prisma.contractChecklistItem.createMany).toHaveBeenCalled();
     expect(workflow.transition).not.toHaveBeenCalled();
   });
