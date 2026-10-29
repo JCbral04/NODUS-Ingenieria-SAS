@@ -6,6 +6,12 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { UsersModule } from '../users/users.module';
 import { AuditModule } from '../audit/audit.module';
+import type { SignOptions } from 'jsonwebtoken';
+
+const jwtExpiresIn = process.env.JWT_EXPIRES_IN ?? '1h';
+if (!/^\d+[smhd]$/.test(jwtExpiresIn)) {
+  throw new Error(`JWT_EXPIRES_IN inválido: "${jwtExpiresIn}". Formato: número + s|m|h|d (ej: "1h")`);
+}
 
 @Module({
   imports: [
@@ -13,7 +19,7 @@ import { AuditModule } from '../audit/audit.module';
     AuditModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN ?? '1h' },
+      signOptions: { expiresIn: jwtExpiresIn as SignOptions['expiresIn'] },
     }),
   ],
   controllers: [AuthController],
