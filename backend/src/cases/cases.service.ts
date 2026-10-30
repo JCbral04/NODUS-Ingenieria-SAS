@@ -14,12 +14,14 @@ import { CreateClassificationDto } from './dto/classification.dto';
 import { ApplyDto } from './dto/apply.dto';
 import { DecisionDto } from './dto/decision.dto';
 import { WorkflowService } from '../workflow/workflow.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class CasesService {
   constructor(
-    private prisma: PrismaService,
-    private workflow: WorkflowService,
+    private readonly prisma: PrismaService,
+    private readonly workflow: WorkflowService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async createWithOnboarding(dto: OnboardingDto) {
@@ -89,6 +91,12 @@ export class CasesService {
           metadata: { caseNumber: caso.caseNumber, source: 'onboarding' },
         },
       });
+      await this.notifications.notifyCaseCreated(tx, {
+        caseId: caso.id,
+        caseNumber: caso.caseNumber,
+        actorId: user.id,
+      });
+
       return { caseNumber: caso.caseNumber, status: caso.status, email: user.email };
     });
   }
