@@ -3,13 +3,12 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { LogoMark } from "@/components/brand/Logo";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-
   useEffect(() => {
     if (!isLoading && !user) {
       router.replace("/login");
@@ -18,19 +17,20 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   if (isLoading || !user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <p className="text-sm text-slate-500">Cargando…</p>
+      <div
+        role="status"
+        aria-label="Cargando sesión"
+        className="flex min-h-screen items-center justify-center bg-canvas"
+      >
+        <LogoMark size={40} className="animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-slate-950">
-      <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar />
-        <main className="flex-1 overflow-y-auto p-6 text-slate-100">{children}</main>
-      </div>
+    <div className="min-h-screen overflow-x-clip bg-canvas text-ink">
+      <Topbar />
+      <main className="mx-auto max-w-[1400px] p-4 pb-10 lg:p-8 lg:pb-12">{children}</main>
     </div>
   );
 }

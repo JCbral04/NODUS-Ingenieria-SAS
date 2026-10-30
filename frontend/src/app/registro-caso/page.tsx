@@ -5,6 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AREAS, URGENCIAS, IMPACTOS } from "@/lib/lov";
+import { Logo } from "@/components/brand/Logo";
+import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 const step1Schema = z.object({
   companyName: z.string().min(1, "Requerido"),
@@ -37,6 +40,7 @@ type FormValues = z.output<typeof fullSchema>;
 const STEP1_FIELDS = Object.keys(step1Schema.shape) as (keyof FormInput)[];
 
 export default function RegistroCasoPage() {
+  const toast = useToast();
   const [step, setStep] = useState<1 | 2>(1);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -77,8 +81,11 @@ export default function RegistroCasoPage() {
       // endpoint POST /api/cases esté disponible (issue #17). Por ahora se
       // asume { caseNumber: string } según el criterio de aceptación.
       setCaseNumber(data.caseNumber ?? data.case?.caseNumber ?? null);
+      toast.success("Tu caso quedó registrado.");
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : "Error inesperado");
+      const message = err instanceof Error ? err.message : "Error inesperado";
+      setServerError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -86,19 +93,19 @@ export default function RegistroCasoPage() {
 
   if (caseNumber) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
-        <div className="w-full max-w-md rounded-lg border border-emerald-800 bg-slate-900 p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-900/40">
+      <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
+        <div className="w-full max-w-md card border-ok/40 p-8 text-center shadow-xl">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-ok-soft">
             <span className="text-2xl">✅</span>
           </div>
-          <h1 className="text-xl font-bold text-slate-100">¡Caso registrado!</h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <h1 className="text-xl font-bold text-ink">¡Caso registrado!</h1>
+          <p className="mt-2 text-sm text-ink-soft">
             Tu número de caso es:
           </p>
-          <p className="mt-3 rounded-md bg-slate-800 px-4 py-3 text-2xl font-bold tracking-wider text-emerald-400">
+          <p className="mt-3 rounded-md bg-sunken px-4 py-3 text-2xl font-bold tracking-wider text-ink">
             {caseNumber}
           </p>
-          <p className="mt-4 text-xs text-slate-500">
+          <p className="mt-4 text-xs text-ink-muted">
             Guarda este número, lo necesitarás para hacerle seguimiento a tu caso.
           </p>
         </div>
@@ -107,25 +114,26 @@ export default function RegistroCasoPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-10">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-canvas px-4 py-10">
+      <Logo />
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-full max-w-lg rounded-lg border border-slate-800 bg-slate-900 p-8"
+        className="card w-full max-w-lg px-6 py-8 shadow-xl sm:px-10 sm:py-10"
       >
-        <h1 className="text-xl font-bold text-slate-100">Registra tu caso</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <h1 className="text-3xl font-bold tracking-tight text-ink">Registra tu caso</h1>
+        <p className="mt-1 text-sm text-ink-soft">
           Paso {step} de 2 — {step === 1 ? "Datos de tu empresa" : "Cuéntanos qué necesitas"}
         </p>
 
         {step === 1 && (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-5">
             <Field label="Nombre de la empresa" error={errors.companyName?.message}>
               <input {...register("companyName")} className={inputClass} />
             </Field>
             <Field label="NIT (opcional)" error={errors.taxId?.message}>
               <input {...register("taxId")} className={inputClass} />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
               <Field label="País" error={errors.country?.message}>
                 <input {...register("country")} className={inputClass} />
               </Field>
@@ -149,26 +157,22 @@ export default function RegistroCasoPage() {
               <input type="password" {...register("password")} className={inputClass} />
             </Field>
 
-            <label className="flex items-start gap-2 text-sm text-slate-300">
+            <label className="flex items-start gap-2 text-sm text-ink-soft">
               <input type="checkbox" {...register("acceptsTerms")} className="mt-1" />
               Acepto los términos y condiciones de la plataforma
             </label>
             {errors.acceptsTerms && (
-              <p className="text-xs text-red-400">{errors.acceptsTerms.message}</p>
+              <p className="text-xs text-ink">{errors.acceptsTerms.message}</p>
             )}
 
-            <button
-              type="button"
-              onClick={goToStep2}
-              className="w-full rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-950 hover:opacity-90"
-            >
+            <Button className="w-full py-3.5 text-base" onClick={goToStep2}>
               Siguiente
-            </button>
+            </Button>
           </div>
         )}
 
         {step === 2 && (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-5">
             <Field label="Título del caso" error={errors.title?.message}>
               <input {...register("title")} className={inputClass} />
             </Field>
@@ -201,26 +205,18 @@ export default function RegistroCasoPage() {
             </Field>
 
             {serverError && (
-              <p className="rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">
+              <p className="rounded-md border-l-4 border-ink bg-info-soft px-3 py-2 text-sm text-ink">
                 {serverError}
               </p>
             )}
 
             <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="w-1/3 rounded-md border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
-              >
+              <Button variant="secondary" className="w-1/3 py-3.5 text-base" onClick={() => setStep(1)}>
                 Atrás
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-2/3 rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-950 hover:opacity-90 disabled:opacity-50"
-              >
-                {submitting ? "Enviando…" : "Registrar caso"}
-              </button>
+              </Button>
+              <Button type="submit" className="w-2/3 py-3.5 text-base" loading={submitting} loadingText="Enviando…">
+                Registrar caso
+              </Button>
             </div>
           </div>
         )}
@@ -229,8 +225,7 @@ export default function RegistroCasoPage() {
   );
 }
 
-const inputClass =
-  "mt-1 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-500";
+const inputClass = "input-line mt-1";
 
 function Field({
   label,
@@ -243,9 +238,9 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-300">{label}</label>
+      <label className="label-line">{label}</label>
       {children}
-      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+      {error && <p className="mt-1 text-xs text-ink">{error}</p>}
     </div>
   );
 }

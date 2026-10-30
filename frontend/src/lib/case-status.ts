@@ -18,32 +18,96 @@ export const STATUS_LABELS: Record<string, string> = {
   CERRADO_SIN_CONTRATACION: "Cerrado sin contratación",
 };
 
+/*
+ * Los estados se muestran como texto, sin píldora: el verde marca el avance,
+ * el negro lo que espera una acción o ya cerró.
+ */
+const T_GREEN = "font-semibold text-primary";
+const T_BLACK = "font-semibold text-ink";
+
 export const STATUS_COLORS: Record<string, string> = {
-  CREADO: "bg-blue-900/40 text-blue-300",
-  EN_REVISION: "bg-amber-900/40 text-amber-300",
-  CLASIFICADO: "bg-indigo-900/40 text-indigo-300",
-  EN_POSTULACION: "bg-indigo-900/40 text-indigo-300",
-  ASIGNADO: "bg-indigo-900/40 text-indigo-300",
-  PROPUESTA_EN_DISENO: "bg-purple-900/40 text-purple-300",
-  PROPUESTA_LISTA_QA: "bg-purple-900/40 text-purple-300",
-  PROPUESTA_ENVIADA: "bg-purple-900/40 text-purple-300",
-  EN_DECISION_CLIENTE: "bg-amber-900/40 text-amber-300",
-  AJUSTES_PROPUESTA: "bg-amber-900/40 text-amber-300",
-  PROPUESTA_ACEPTADA: "bg-emerald-900/40 text-emerald-300",
-  PENDIENTE_CONTRATACION: "bg-emerald-900/40 text-emerald-300",
-  AUTORIZADO_EJECUCION: "bg-emerald-900/40 text-emerald-300",
-  EN_EJECUCION: "bg-emerald-900/40 text-emerald-300",
-  LISTO_PARA_CIERRE: "bg-emerald-900/40 text-emerald-300",
-  CERRADO: "bg-green-900/40 text-green-300",
-  CERRADO_SIN_CONTRATACION: "bg-red-900/40 text-red-300",
+  CREADO: "font-medium text-ink",
+  EN_REVISION: T_BLACK,
+  CLASIFICADO: T_GREEN,
+  EN_POSTULACION: T_GREEN,
+  ASIGNADO: T_GREEN,
+  PROPUESTA_EN_DISENO: T_GREEN,
+  PROPUESTA_LISTA_QA: T_GREEN,
+  PROPUESTA_ENVIADA: T_GREEN,
+  EN_DECISION_CLIENTE: T_BLACK,
+  AJUSTES_PROPUESTA: T_BLACK,
+  PROPUESTA_ACEPTADA: T_GREEN,
+  PENDIENTE_CONTRATACION: T_GREEN,
+  AUTORIZADO_EJECUCION: T_GREEN,
+  EN_EJECUCION: T_GREEN,
+  LISTO_PARA_CIERRE: T_GREEN,
+  CERRADO: "font-bold text-ink",
+  CERRADO_SIN_CONTRATACION: "font-medium text-ink",
 };
 
 export const ALL_STATUSES = Object.keys(STATUS_LABELS);
+
+/** Etapas del flujo: agrupan los estados para el mapa del Dashboard y el filtro de Casos. */
+export const STAGES = [
+  { key: "REVISION", label: "Revisión", statuses: ["CREADO", "EN_REVISION", "CLASIFICADO"] },
+  { key: "POSTULACION", label: "Postulación", statuses: ["EN_POSTULACION", "ASIGNADO"] },
+  {
+    key: "PROPUESTA",
+    label: "Propuesta",
+    statuses: ["PROPUESTA_EN_DISENO", "PROPUESTA_LISTA_QA", "PROPUESTA_ENVIADA", "AJUSTES_PROPUESTA"],
+  },
+  { key: "DECISION", label: "Decisión", statuses: ["EN_DECISION_CLIENTE", "PROPUESTA_ACEPTADA"] },
+  { key: "CONTRATACION", label: "Contratación", statuses: ["PENDIENTE_CONTRATACION", "AUTORIZADO_EJECUCION"] },
+  { key: "EJECUCION", label: "Ejecución", statuses: ["EN_EJECUCION", "LISTO_PARA_CIERRE"] },
+  { key: "CIERRE", label: "Cerrado", statuses: ["CERRADO", "CERRADO_SIN_CONTRATACION"] },
+];
+
+export function stageOf(status: string) {
+  return STAGES.find((s) => s.statuses.includes(status))?.key;
+}
+
+export function stageLabel(key: string) {
+  return STAGES.find((s) => s.key === key)?.label ?? key;
+}
 
 export function statusLabel(code: string) {
   return STATUS_LABELS[code] ?? code;
 }
 
 export function statusColor(code: string) {
-  return STATUS_COLORS[code] ?? "bg-slate-800 text-slate-300";
+  return STATUS_COLORS[code] ?? "text-ink";
+}
+const SLA_LABELS: Record<string, string> = {
+  OK: "En plazo",
+  POR_VENCER: "Por vencer",
+  VENCIDO: "Vencido",
+};
+
+export function slaLabel(state: string) {
+  return SLA_LABELS[state] ?? state;
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: "Administrador",
+  ADVISORY: "Advisory",
+  CONSULTOR: "Consultor",
+  MIPYME: "Mipyme",
+};
+
+export function roleLabel(role?: string) {
+  return role ? (ROLE_LABELS[role] ?? role) : "";
+}
+
+/** Avance del caso en el flujo, de 0 a 1 (según el orden de los estados). */
+export function statusProgress(code: string) {
+  const i = ALL_STATUSES.indexOf(code);
+  return i < 0 ? 0 : i / (ALL_STATUSES.length - 1);
+}
+
+/** Texto del SLA: lo vencido en negrita y mayúsculas, lo que va en plazo en verde. */
+export function slaTone(state?: string) {
+  if (state === "VENCIDO") return "font-bold uppercase tracking-wide text-ink";
+  if (state === "POR_VENCER") return "font-semibold text-ink";
+  if (state === "OK") return "font-semibold text-primary";
+  return "";
 }

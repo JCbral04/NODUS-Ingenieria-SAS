@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { LogoMark } from "@/components/brand/Logo";
+import { Button } from "@/components/ui/Button";
 
 const loginSchema = z.object({
   email: z.string().email("Ingresa un correo válido"),
@@ -14,7 +17,7 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-export function LoginForm()  {
+export function LoginForm() {
   const { login } = useAuth();
   const searchParams = useSearchParams();
   const infoMessage = searchParams.get("message");
@@ -40,59 +43,87 @@ export function LoginForm()  {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-slate-800 bg-slate-900 p-8">
-        <h1 className="text-xl font-bold text-slate-100">Iniciar sesión</h1>
-        <p className="mt-1 text-sm text-slate-400">Plataforma NODUS</p>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-sidebar via-sidebar to-primary px-4 py-10">
+      <div className="w-full max-w-3xl rounded-2xl bg-surface px-6 py-10 shadow-xl sm:px-14 sm:py-14">
+        <LogoMark size={64} className="mx-auto" />
 
-        {infoMessage && (
-          <div className="mt-4 rounded-md bg-amber-900/40 px-3 py-2 text-sm text-amber-300">
-            {infoMessage}
-          </div>
-        )}
+        <h1 className="mt-6 text-center text-4xl font-bold leading-[1.05] tracking-tight text-ink sm:text-5xl">
+          Iniciar sesión
+          <br />
+          en NODUS
+        </h1>
+        <p className="mt-4 text-center text-base text-ink-soft">
+          Ingresa o registra tu caso para gestionar tus proyectos hoy.
+        </p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-300">Correo</label>
-            <input
-              type="email"
-              {...register("email")}
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-500"
-              placeholder="tucorreo@nodus.co"
-            />
-            {errors.email && (
-              <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300">Contraseña</label>
-            <input
-              type="password"
-              {...register("password")}
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-500"
-              placeholder="••••••••"
-            />
-            {errors.password && (
-              <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>
-            )}
-          </div>
-
-          {serverError && (
-            <p className="rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">
-              {serverError}
-            </p>
+        <div className="mx-auto mt-10 max-w-md">
+          {infoMessage && (
+            <div role="status" className="mb-5 rounded-md border-l-4 border-ink bg-info-soft px-3 py-2 text-sm text-ink">
+              {infoMessage}
+            </div>
           )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-950 transition-opacity hover:opacity-90 disabled:opacity-50"
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold text-ink">
+                Correo
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                {...register("email")}
+                className="mt-1 w-full rounded-none border-0 border-b-2 border-line-strong bg-transparent px-0.5 py-2.5 text-base text-ink outline-none transition-colors placeholder:text-ink/40 focus:border-primary focus-visible:shadow-none"
+                placeholder="tucorreo@nodus.co"
+              />
+              {errors.email && <p className="mt-1 text-xs text-ink">{errors.email.message}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-semibold text-ink">
+                Contraseña
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                {...register("password")}
+                className="mt-1 w-full rounded-none border-0 border-b-2 border-line-strong bg-transparent px-0.5 py-2.5 text-base text-ink outline-none transition-colors placeholder:text-ink/40 focus:border-primary focus-visible:shadow-none"
+                placeholder="••••••••"
+              />
+              {errors.password && (
+                <p className="mt-1 text-xs text-ink">{errors.password.message}</p>
+              )}
+            </div>
+
+            {serverError && (
+              <p role="alert" className="rounded-md border-l-4 border-ink bg-info-soft px-3 py-2 text-sm text-ink">
+                {serverError}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              loading={submitting}
+              loadingText="Ingresando…"
+              className="mt-3 w-full rounded-full py-3.5 text-base"
+            >
+              Ingresar
+            </Button>
+          </form>
+
+          <Link
+            href="/registro-caso"
+            className="mt-3 flex w-full items-center justify-center rounded-full border border-line-strong bg-surface py-3 text-base font-semibold text-ink-soft transition-colors hover:bg-sunken hover:text-ink"
           >
-            {submitting ? "Ingresando…" : "Ingresar"}
-          </button>
-        </form>
+            Registrar un caso
+          </Link>
+        </div>
       </div>
-    </div>
+
+      <p className="mt-6 text-center text-xs text-white/90">
+        Al continuar aceptas los términos y condiciones de la plataforma NODUS Ingeniería SAS.
+      </p>
+    </main>
   );
 }

@@ -1,3 +1,143 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * Tema NODUS — "papel de plano".
+ * Fuente única de la identidad visual. Los componentes usan los nombres
+ * semánticos de tailwind.config.ts (bg-canvas, text-ink, bg-primary…),
+ * nunca colores sueltos. Los valores van como canales RGB para que
+ * funcionen las opacidades de Tailwind (bg-primary/20).
+ */
+:root {
+  /* Tipografía (fuentes autoalojadas con @fontsource, ver layout.tsx) */
+  --font-display: "Bricolage Grotesque Variable", system-ui, sans-serif;
+  --font-sans: "Instrument Sans Variable", system-ui, sans-serif;
+
+  /* Superficies */
+  --canvas: 244 244 242; /* fondo de la app (gris neutro) */
+  --surface: 255 255 255; /* #FFFFFF tarjetas y paneles */
+  --sunken: 248 248 247; /* inputs, chips, hover */
+  --line: 224 224 221; /* bordes suaves */
+  --line-strong: 188 188 184; /* bordes de controles */
+
+  /* Tinta */
+  --ink: 17 17 17; /* #111111 negro */
+  --ink-soft: 17 17 17; /* negro: todo el texto va en tinta */
+  --ink-muted: 17 17 17; /* negro (los placeholders usan ink/40) */
+
+  /* Marca */
+  --primary: 11 107 88; /* #0B6B58 verde nodo */
+  --primary-strong: 8 83 68; /* #085344 hover */
+  --primary-soft: 218 238 232; /* #DAEEE8 fondos tenues */
+  --on-primary: 255 255 255;
+  --accent: 11 107 88; /* alias del verde: no hay segundo color */
+
+  /* Barra / superficies oscuras: negro */
+  --sidebar: 17 17 17;
+  --sidebar-ink: 255 255 255;
+  --sidebar-line: 60 60 58;
+
+  /*
+   * Paleta: un solo color (verde) más negro, blanco y grises neutros. Los
+   * "tonos" de estado son alias del verde o de neutros; lo urgente se marca
+   * con negro o contorno, no con otro color.
+   */
+  --info: 17 17 17;
+  --info-soft: 236 236 233; /* neutro */
+  --warn: 17 17 17;
+  --warn-soft: 236 236 233; /* neutro */
+  --flow: 11 107 88;
+  --flow-soft: 218 238 232; /* verde tenue */
+  --prop: 11 107 88;
+  --prop-soft: 218 238 232;
+  --ok: 11 107 88;
+  --ok-soft: 218 238 232;
+  --danger: 17 17 17;
+  --danger-soft: 236 236 233;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: rgb(var(--canvas));
+    color: rgb(var(--ink));
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 1;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  /* Foco visible en teclado para todos los controles */
+  :where(a, button, [role="button"], summary):focus-visible {
+    outline: 2px solid rgb(var(--primary));
+    outline-offset: 2px;
+  }
+
+  :where(input, textarea, select):focus-visible {
+    border-color: rgb(var(--primary));
+    box-shadow: 0 0 0 3px rgb(var(--primary) / 0.22);
+  }
+
+  ::selection {
+    background-color: rgb(var(--primary) / 0.22);
+  }
+}
+
+@layer components {
+  /* Tarjeta estándar de la app: misma familia visual que el panel del login. */
+  .card {
+    @apply rounded-2xl border border-line bg-surface shadow-sm;
+  }
+
+  /* Tarjeta clicable: se eleva un poco al pasar el cursor. */
+  .card-hover {
+    @apply transition-shadow hover:shadow-md;
+  }
+
+  /* Campo de formulario con solo subrayado (igual que el login). */
+  .input-line {
+    @apply w-full rounded-none border-0 border-b-2 border-line-strong bg-transparent px-0.5 py-2.5 text-base text-ink outline-none transition-colors placeholder:text-ink/40 focus:border-primary focus-visible:shadow-none;
+  }
+
+  .label-line {
+    @apply block text-sm font-semibold text-ink;
+  }
+}
+
+/* Movimiento solo como respuesta a una acción: un toast que entra, un modal que abre. */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast-in {
+  animation: toast-in 0.18s ease-out;
+}
+
+.confirm-dialog::backdrop {
+  background: rgb(var(--ink) / 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
