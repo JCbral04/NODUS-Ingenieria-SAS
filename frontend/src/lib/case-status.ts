@@ -47,3 +47,23 @@ export function statusLabel(code: string) {
 export function statusColor(code: string) {
   return STATUS_COLORS[code] ?? "bg-sunken text-ink-soft";
 }
+const SLA_LABELS: Record<string, string> = {
+  OK: "En plazo",
+  POR_VENCER: "Por vencer",
+  VENCIDO: "Vencido",
+};
+
+export function slaLabel(state: string) {
+  return SLA_LABELS[state] ?? state;
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: "Administrador",
+  ADVISORY: "Advisory",
+  CONSULTOR: "Consultor",
+  MIPYME: "Mipyme",
+};
+
+export function roleLabel(role?: string) {
+  return role ? (ROLE_LABELS[role] ?? role) : "";
+}

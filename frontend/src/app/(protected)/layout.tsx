@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
@@ -10,6 +10,19 @@ import { LogoMark } from "@/components/brand/Logo";
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const [navOpen, setNavOpen] = useState(false);
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setNavOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [navOpen]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -31,10 +44,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen bg-canvas">
-      <Sidebar />
+      <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar />
-        <main className="flex-1 overflow-y-auto p-6 text-ink">{children}</main>
+        <Topbar onMenu={() => setNavOpen(true)} />
+        <main className="flex-1 overflow-y-auto p-4 text-ink lg:p-6">{children}</main>
       </div>
     </div>
   );

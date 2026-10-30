@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { statusLabel, statusColor } from "@/lib/case-status";
+import { statusLabel, statusColor, slaLabel } from "@/lib/case-status";
 import { TRANSITIONS } from "@/lib/transitions";
 import { AREAS, TIPOS_INTERVENCION, COMPLEJIDADES, IMPACTOS } from "@/lib/lov";
 import { Button } from "@/components/ui/Button";
@@ -274,7 +274,7 @@ export default function CasoDetallePage() {
           </span>
           {sla?.state && (
             <span className={`rounded-full px-3 py-1 text-sm font-medium ${slaColor(sla.state)}`}>
-              SLA: {sla.state}
+              SLA: {slaLabel(sla.state)}
               {typeof sla.percent === "number" && ` (${sla.percent}%)`}
               {typeof sla.elapsedHours === "number" && ` · ${sla.elapsedHours}h`}
             </span>
@@ -568,7 +568,7 @@ export default function CasoDetallePage() {
           )}
         </div>
 
-        <div className="rounded-lg border border-line bg-surface p-5">
+        <div className="rounded-lg border border-line bg-surface p-5 lg:self-start">
           <h2 className="font-semibold text-ink">Historial</h2>
           <ol className="mt-4 space-y-4 border-l border-line-strong pl-4">
             {data.stateHistory?.map((h) => (

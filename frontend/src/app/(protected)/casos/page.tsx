@@ -168,7 +168,7 @@ function CasosContent() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Casos</h1>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="relative">
+          <label className="relative w-full sm:w-auto">
             <span className="sr-only">Buscar casos</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" aria-hidden />
             <input
@@ -176,7 +176,7 @@ function CasosContent() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por número, título o empresa"
-              className="w-72 rounded-md border border-line-strong bg-surface py-1.5 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-ink-muted"
+              className="w-full rounded-md border border-line-strong bg-surface py-1.5 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-ink-muted sm:w-72"
             />
           </label>
           <select

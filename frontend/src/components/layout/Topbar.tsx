@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, ChevronDown, LogOut } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { roleLabel } from "@/lib/case-status";
 
 function initials(name?: string) {
   if (!name) return "U";
@@ -10,12 +11,21 @@ function initials(name?: string) {
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "U";
 }
 
-export function Topbar() {
+export function Topbar({ onMenu }: { onMenu?: () => void }) {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="flex h-16 items-center justify-end gap-4 border-b border-line bg-surface px-6">
+    <header className="flex h-16 items-center gap-4 border-b border-line bg-surface px-4 lg:px-6">
+      <button
+        type="button"
+        aria-label="Abrir menú"
+        onClick={onMenu}
+        className="rounded-md p-2 text-ink-soft hover:bg-sunken hover:text-ink lg:hidden"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+      <div className="flex-1" />
       <button
         type="button"
         aria-label="Notificaciones"
@@ -38,9 +48,9 @@ export function Topbar() {
           >
             {initials(user?.fullName)}
           </span>
-          <span className="font-medium text-ink">{user?.fullName ?? "Usuario"}</span>
+          <span className="hidden font-medium text-ink sm:inline">{user?.fullName ?? "Usuario"}</span>
           <span className="rounded bg-primary-soft px-1.5 py-0.5 text-xs font-medium text-primary">
-            {user?.role}
+            {roleLabel(user?.role)}
           </span>
           <ChevronDown className="h-4 w-4" />
         </button>
