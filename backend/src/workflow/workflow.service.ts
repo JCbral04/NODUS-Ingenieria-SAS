@@ -1,5 +1,10 @@
-import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import { CaseStatus } from '@prisma/client';
+import {
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+import { CaseStatus, Prisma } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma.service';
 
 const TRANSITIONS: Record<CaseStatus, CaseStatus[]> = {
@@ -11,8 +16,16 @@ const TRANSITIONS: Record<CaseStatus, CaseStatus[]> = {
   PROPUESTA_EN_DISENO: ['PROPUESTA_LISTA_QA'],
   PROPUESTA_LISTA_QA: ['PROPUESTA_ENVIADA'],
   PROPUESTA_ENVIADA: ['EN_DECISION_CLIENTE'],
-  EN_DECISION_CLIENTE: ['AJUSTES_PROPUESTA', 'PROPUESTA_ACEPTADA', 'CERRADO_SIN_CONTRATACION'],
-  AJUSTES_PROPUESTA: ['PROPUESTA_EN_DISENO', 'PROPUESTA_ENVIADA', 'EN_DECISION_CLIENTE'],
+  EN_DECISION_CLIENTE: [
+    'AJUSTES_PROPUESTA',
+    'PROPUESTA_ACEPTADA',
+    'CERRADO_SIN_CONTRATACION',
+  ],
+  AJUSTES_PROPUESTA: [
+    'PROPUESTA_EN_DISENO',
+    'PROPUESTA_ENVIADA',
+    'EN_DECISION_CLIENTE',
+  ],
   PROPUESTA_ACEPTADA: ['PENDIENTE_CONTRATACION'],
   PENDIENTE_CONTRATACION: ['AUTORIZADO_EJECUCION'],
   AUTORIZADO_EJECUCION: ['EN_EJECUCION'],
@@ -24,32 +37,83 @@ const TRANSITIONS: Record<CaseStatus, CaseStatus[]> = {
 
 @Injectable()
 export class WorkflowService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
-  async transition(caseId: number, target: CaseStatus, actorId: number, note?: string) {
-    const caso = await this.prisma.case.findUnique({ where: { id: caseId } });
-    if (!caso) throw new NotFoundException('Caso no existe');
+  async transition(
+    caseId: number,
+    target: CaseStatus,
+    actorId: number,
+    note?: string,
+    externalTx?: Prisma.TransactionClient,
+  ) {
+    const run = async (tx: Prisma.TransactionClient) => {
+      const caso = await tx.case.findUnique({
+        where: { id: caseId },
+        include: {
+          contact: { select: { userId: true } },
+          assignedConsultant: {
+            include: {
+              user: { select: { fullName: true } },
+            },
+          },
+        },
+      });
 
-    const allowed = TRANSITIONS[caso.status] ?? [];
-    if (!allowed.includes(target))
-      throw new UnprocessableEntityException(`Transición inválida: ${caso.status} → ${target}`);
+      if (!caso) throw new NotFoundException('Caso no existe');
 
-    await this.prisma.$transaction(async (tx) => {
+      const allowed = TRANSITIONS[caso.status] ?? [];
+      if (!allowed.includes(target)) {
+        throw new UnprocessableEntityException(
+          `Transición inválida: ${caso.status} → ${target}`,
+        );
+      }
+
       await tx.case.update({
         where: { id: caseId },
         data: { status: target, statusChangedAt: new Date() },
       });
+
       await tx.caseStateHistory.create({
-        data: { caseId, fromStatus: caso.status, toStatus: target, actorId, note },
-      });
-      await tx.auditLog.create({
         data: {
-          actorId, action: 'TRANSITION', entity: 'Case', entityId: caseId, caseId,
-          prevState: caso.status, newState: target, metadata: { note },
+          caseId,
+          fromStatus: caso.status,
+          toStatus: target,
+          actorId,
+          note,
         },
       });
-    });
 
-    return this.prisma.case.findUnique({ where: { id: caseId } });
+      await tx.auditLog.create({
+        data: {
+          actorId,
+          action: 'TRANSITION',
+          entity: 'Case',
+          entityId: caseId,
+          caseId,
+          prevState: caso.status,
+          newState: target,
+          metadata: { note },
+        },
+      });
+
+      await this.notifications.notifyTransition(tx, {
+        caseId,
+        caseNumber: caso.caseNumber,
+        toStatus: target,
+        actorId,
+        contactUserId: caso.contact?.userId,
+        consultantUserId: caso.assignedConsultant?.userId,
+        consultantName: caso.assignedConsultant?.user.fullName,
+      });
+
+      return tx.case.findUnique({ where: { id: caseId } });
+    };
+
+    return externalTx
+      ? run(externalTx)
+      : this.prisma.$transaction(run);
   }
 }
