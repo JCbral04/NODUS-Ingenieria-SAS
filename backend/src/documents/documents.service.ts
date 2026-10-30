@@ -5,12 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import {
-  access,
-  mkdir,
-  unlink,
-  writeFile,
-} from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
+import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import { DocumentStage } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
@@ -74,14 +70,18 @@ export class DocumentsService {
     }
 
     const name = this.sanitizeName(file.originalname);
-    const directory = path.join(
-      this.storageRoot,
+    const directory = this.resolveStoragePath(
       'documents',
       String(caseId),
       dto.stage,
     );
     const extension = path.extname(name).toLowerCase().slice(0, 10);
-    const filePath = path.join(directory, `${randomUUID()}${extension}`);
+    const filePath = this.resolveStoragePath(
+      'documents',
+      String(caseId),
+      dto.stage,
+      `${randomUUID()}${extension}`,
+    );
 
     await mkdir(directory, { recursive: true });
 
@@ -161,20 +161,16 @@ export class DocumentsService {
 
     await this.authorizeCase(actor, document.caseId);
 
-    const filePath = path.resolve(document.path);
-    const rootPrefix = this.storageRoot.endsWith(path.sep)
-      ? this.storageRoot
-      : `${this.storageRoot}${path.sep}`;
+    const storedPath = this.resolveStoragePath(document.path);
 
-    if (!filePath.startsWith(rootPrefix)) {
-      throw new ForbiddenException('Ruta de almacenamiento no permitida');
-    }
-
+    let realPath: string;
     try {
-      await access(filePath);
+      realPath = realpathSync(storedPath);
     } catch {
       throw new NotFoundException('Archivo físico no existe');
     }
+
+    const filePath = this.resolveStoragePath(realPath);
 
     return {
       path: filePath,
@@ -208,7 +204,9 @@ export class DocumentsService {
         select: { id: true },
       });
 
-      if (!contact) throw new ForbiddenException('No tienes acceso al caso');
+      if (!contact) {
+        throw new ForbiddenException('No tienes acceso al caso');
+      }
       return caso;
     }
 
@@ -220,6 +218,19 @@ export class DocumentsService {
     }
 
     throw new ForbiddenException('No tienes acceso al caso');
+  }
+
+  private resolveStoragePath(...segments: string[]) {
+    const filePath = path.resolve(this.storageRoot, ...segments);
+    const rootPrefix = this.storageRoot.endsWith(path.sep)
+      ? this.storageRoot
+      : `${this.storageRoot}${path.sep}`;
+
+    if (!filePath.startsWith(rootPrefix)) {
+      throw new ForbiddenException('Ruta de almacenamiento no permitida');
+    }
+
+    return filePath;
   }
 
   private sanitizeName(originalName: string) {
