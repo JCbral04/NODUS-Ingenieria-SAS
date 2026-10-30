@@ -58,13 +58,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             key={t.id}
             role={t.kind === "error" ? "alert" : "status"}
             className={`toast-in pointer-events-auto flex items-start gap-3 rounded-lg border bg-surface p-3 shadow-lg ${
-              t.kind === "error" ? "border-danger/40" : "border-ok/40"
+              t.kind === "error" ? "border-ink/40" : "border-ok/40"
             }`}
           >
             {t.kind === "error" ? (
-              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-danger" aria-hidden />
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-ink" aria-hidden />
             ) : (
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-ok" aria-hidden />
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-ink" aria-hidden />
             )}
             <p className="flex-1 text-sm text-ink">{t.message}</p>
             <button

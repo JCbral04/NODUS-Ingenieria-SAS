@@ -58,7 +58,7 @@ export function LoginForm() {
 
         <div className="mx-auto mt-10 max-w-md">
           {infoMessage && (
-            <div role="status" className="mb-5 rounded-md bg-warn-soft px-3 py-2 text-sm text-warn">
+            <div role="status" className="mb-5 rounded-md border-l-4 border-ink bg-info-soft px-3 py-2 text-sm text-ink">
               {infoMessage}
             </div>
           )}
@@ -73,10 +73,10 @@ export function LoginForm() {
                 type="email"
                 autoComplete="email"
                 {...register("email")}
-                className="mt-1 w-full rounded-none border-0 border-b-2 border-line-strong bg-transparent px-0.5 py-2.5 text-base text-ink outline-none transition-colors placeholder:text-ink-muted focus:border-primary focus-visible:shadow-none"
+                className="mt-1 w-full rounded-none border-0 border-b-2 border-line-strong bg-transparent px-0.5 py-2.5 text-base text-ink outline-none transition-colors placeholder:text-ink/40 focus:border-primary focus-visible:shadow-none"
                 placeholder="tucorreo@nodus.co"
               />
-              {errors.email && <p className="mt-1 text-xs text-danger">{errors.email.message}</p>}
+              {errors.email && <p className="mt-1 text-xs text-ink">{errors.email.message}</p>}
             </div>
 
             <div>
@@ -88,16 +88,16 @@ export function LoginForm() {
                 type="password"
                 autoComplete="current-password"
                 {...register("password")}
-                className="mt-1 w-full rounded-none border-0 border-b-2 border-line-strong bg-transparent px-0.5 py-2.5 text-base text-ink outline-none transition-colors placeholder:text-ink-muted focus:border-primary focus-visible:shadow-none"
+                className="mt-1 w-full rounded-none border-0 border-b-2 border-line-strong bg-transparent px-0.5 py-2.5 text-base text-ink outline-none transition-colors placeholder:text-ink/40 focus:border-primary focus-visible:shadow-none"
                 placeholder="••••••••"
               />
               {errors.password && (
-                <p className="mt-1 text-xs text-danger">{errors.password.message}</p>
+                <p className="mt-1 text-xs text-ink">{errors.password.message}</p>
               )}
             </div>
 
             {serverError && (
-              <p role="alert" className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
+              <p role="alert" className="rounded-md border-l-4 border-ink bg-info-soft px-3 py-2 text-sm text-ink">
                 {serverError}
               </p>
             )}

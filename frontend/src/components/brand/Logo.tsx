@@ -27,7 +27,7 @@ export function LogoMark({ size = 32, className }: { size?: number; className?: 
       <circle cx="9" cy="23" r="2.6" fill="#FFFFFF" />
       <circle cx="9" cy="9" r="2.6" fill="#FFFFFF" />
       <circle cx="23" cy="23" r="2.6" fill="#FFFFFF" />
-      <circle cx="23" cy="9" r="2.9" fill="#F26B21" />
+      <circle cx="23" cy="9" r="2.9" fill="#FFFFFF" />
     </svg>
   );
 }

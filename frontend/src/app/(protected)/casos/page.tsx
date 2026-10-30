@@ -10,6 +10,7 @@ import { SkeletonRegion, SkeletonTable, Skeleton } from "@/components/ui/Skeleto
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 interface CaseListItem {
   id: number;
@@ -59,10 +60,7 @@ export default function CasosPage() {
 function CasosSkeleton() {
   return (
     <SkeletonRegion label="Cargando casos">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Casos</h1>
-        <Skeleton className="h-9 w-48" />
-      </div>
+      <PageHeader title="Casos" actions={<Skeleton className="h-10 w-48 rounded-full" />} />
       <div className="mt-6">
         <SkeletonTable />
       </div>
@@ -148,8 +146,8 @@ function CasosContent() {
   if (error && !cases) {
     return (
       <div>
-        <h1 className="text-2xl font-bold">Casos</h1>
-        <p role="alert" className="mt-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
+        <PageHeader title="Casos" />
+        <p role="alert" className="mt-4 rounded-md border-l-4 border-ink bg-info-soft px-3 py-2 text-sm text-ink">
           {error}
         </p>
         <Button variant="secondary" className="mt-4" onClick={() => load(true)} loading={refreshing}>
@@ -165,52 +163,48 @@ function CasosContent() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Casos</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="relative w-full sm:w-auto">
-            <span className="sr-only">Buscar casos</span>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" aria-hidden />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por número, título o empresa"
-              className="w-full rounded-md border border-line-strong bg-surface py-1.5 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-ink-muted sm:w-72"
-            />
-          </label>
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            aria-label="Filtrar por estado"
-            className="rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm text-ink"
-          >
-            <option value="TODOS">Todos los estados</option>
-            {ALL_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {statusLabel(s)}
-              </option>
-            ))}
-          </select>
-          <Button
-            variant="secondary"
-            className="px-3 py-1.5"
-            onClick={() => load(true)}
-            loading={refreshing}
-            aria-label="Actualizar lista"
-          >
-            {!refreshing && <RefreshCw className="h-4 w-4" aria-hidden />}
-          </Button>
-        </div>
+      <PageHeader
+        title="Casos"
+        description="Todos los casos del pipeline, con su estado y urgencia."
+      />
+
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <label className="relative w-full sm:w-auto">
+          <span className="sr-only">Buscar casos</span>
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" aria-hidden />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por número, título o empresa"
+            className="w-full rounded-full border border-line-strong bg-surface py-2 pl-10 pr-4 text-sm text-ink outline-none placeholder:text-ink/40 sm:w-80"
+          />
+        </label>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          aria-label="Filtrar por estado"
+          className="rounded-full border border-line-strong bg-surface px-4 py-2 text-sm text-ink"
+        >
+          <option value="TODOS">Todos los estados</option>
+          {ALL_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {statusLabel(s)}
+            </option>
+          ))}
+        </select>
+        <Button variant="secondary" className="px-3 py-2" onClick={() => load(true)} loading={refreshing} aria-label="Actualizar lista">
+          {!refreshing && <RefreshCw className="h-4 w-4" aria-hidden />}
+        </Button>
       </div>
 
       {cases.length > 0 && (
-        <p aria-live="polite" className="mt-3 text-sm text-ink-muted">
+        <p aria-live="polite" className="mt-4 text-sm text-ink-muted">
           {hasFilters
             ? `${visibleCases.length} de ${cases.length} casos`
             : `${cases.length} ${cases.length === 1 ? "caso" : "casos"}`}
           {hasFilters && (
-            <button type="button" onClick={clearFilters} className="ml-3 font-medium text-primary hover:underline">
+            <button type="button" onClick={clearFilters} className="ml-3 font-semibold text-ink underline underline-offset-4">
               Limpiar filtros
             </button>
           )}
@@ -249,7 +243,7 @@ function CasosContent() {
       )}
 
       {visibleCases.length > 0 && (
-        <div className="mt-4 overflow-x-auto rounded-lg border border-line">
+        <div className="card mt-4 overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-sunken text-ink-soft">
               <tr>

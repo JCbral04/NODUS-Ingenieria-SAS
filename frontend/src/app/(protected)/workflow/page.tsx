@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton, SkeletonRegion } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 interface PoolCase {
   id: number;
@@ -37,7 +38,7 @@ export default function WorkflowPage() {
   if (user?.role !== "CONSULTOR") {
     return (
       <div>
-        <h1 className="text-2xl font-bold">Workflow</h1>
+        <PageHeader title="Workflow" />
         <p className="mt-4 text-sm text-ink-muted">
           La bolsa de casos disponibles solo aplica al rol Consultor.
         </p>
@@ -47,19 +48,19 @@ export default function WorkflowPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Bolsa de casos disponibles</h1>
-      <p className="mt-1 text-sm text-ink-soft">
-        Casos publicados que coinciden con tu especialidad.
-      </p>
+      <PageHeader
+        title="Bolsa de casos"
+        description="Casos publicados que coinciden con tu especialidad."
+      />
 
       {error && (
-        <p className="mt-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
+        <p className="mt-4 rounded-md border-l-4 border-ink bg-info-soft px-3 py-2 text-sm text-ink">{error}</p>
       )}
 
       {!error && !cases && (
-        <SkeletonRegion label="Cargando bolsa de casos" className="mt-6 space-y-4">
+        <SkeletonRegion label="Cargando bolsa de casos" className="card mt-6 divide-y divide-line">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-lg border border-line bg-surface p-5">
+            <div key={i} className="p-6">
               <Skeleton className="h-4 w-28" />
               <Skeleton className="mt-3 h-5 w-2/3" />
               <div className="mt-3 flex gap-2">
@@ -82,7 +83,7 @@ export default function WorkflowPage() {
         </div>
       )}
 
-      <div className="mt-6 space-y-4">
+      <div className="card mt-6 divide-y divide-line">
         {cases?.map((c) => (
           <PoolCaseCard
             key={c.id}
@@ -143,11 +144,11 @@ function PoolCaseCard({
   }
 
   return (
-    <div className="rounded-lg border border-line bg-surface p-5">
+    <div className="p-6">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-ink-muted">{caseItem.caseNumber}</p>
-          <h3 className="font-semibold text-ink">{caseItem.title}</h3>
+          <h3 className="text-lg font-semibold text-ink">{caseItem.title}</h3>
           <div className="mt-2 flex flex-wrap gap-2 text-xs text-ink-soft">
             {caseItem.area && <span className="rounded-full bg-sunken px-2 py-1">{caseItem.area}</span>}
             {caseItem.interventionType && (
@@ -163,14 +164,14 @@ function PoolCaseCard({
         </div>
 
         {hasApplied ? (
-          <span className="rounded-md bg-ok-soft px-3 py-1.5 text-sm text-ok">
+          <span className="rounded-full bg-ok-soft px-4 py-1.5 text-sm font-semibold text-ink">
             Postulado ✓
           </span>
         ) : (
           <button
             type="button"
             onClick={onToggle}
-            className="rounded-md border border-line-strong px-3 py-1.5 text-sm text-ink-soft hover:bg-sunken"
+            className="rounded-full border border-line-strong px-4 py-1.5 text-sm font-semibold text-ink-soft transition-colors hover:bg-sunken hover:text-ink"
           >
             {isOpen ? "Cancelar" : "Postularme"}
           </button>
@@ -180,30 +181,30 @@ function PoolCaseCard({
       {isOpen && !hasApplied && (
         <div className="mt-4 space-y-3 border-t border-line pt-4">
           <div>
-            <label className="block text-sm text-ink-soft">¿Por qué te interesa este caso?</label>
+            <label className="label-line">¿Por qué te interesa este caso?</label>
             <textarea
               value={interestStatement}
               onChange={(e) => setInterestStatement(e.target.value)}
               rows={2}
-              className="mt-1 w-full rounded-md border border-line-strong bg-sunken px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+              className="input-line mt-1"
             />
           </div>
           <div>
-            <label className="block text-sm text-ink-soft">Pertinencia de tu perfil</label>
+            <label className="label-line">Pertinencia de tu perfil</label>
             <textarea
               value={relevance}
               onChange={(e) => setRelevance(e.target.value)}
               rows={2}
-              className="mt-1 w-full rounded-md border border-line-strong bg-sunken px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+              className="input-line mt-1"
             />
           </div>
           <div>
-            <label className="block text-sm text-ink-soft">Experiencia relevante</label>
+            <label className="label-line">Experiencia relevante</label>
             <textarea
               value={relevantExperience}
               onChange={(e) => setRelevantExperience(e.target.value)}
               rows={2}
-              className="mt-1 w-full rounded-md border border-line-strong bg-sunken px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+              className="input-line mt-1"
             />
           </div>
           <label className="flex items-center gap-2 text-sm text-ink-soft">
@@ -216,7 +217,7 @@ function PoolCaseCard({
           </label>
 
           {error && (
-            <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
+            <p className="rounded-md border-l-4 border-ink bg-info-soft px-3 py-2 text-sm text-ink">{error}</p>
           )}
 
           <Button loading={submitting} loadingText="Enviando…" onClick={handleApply}>

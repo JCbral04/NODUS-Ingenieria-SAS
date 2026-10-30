@@ -15,42 +15,46 @@
   --font-sans: "Instrument Sans Variable", system-ui, sans-serif;
 
   /* Superficies */
-  --canvas: 238 242 240; /* #EEF2F0 fondo de la app */
+  --canvas: 244 244 242; /* fondo de la app (gris neutro) */
   --surface: 255 255 255; /* #FFFFFF tarjetas y paneles */
-  --sunken: 244 247 246; /* #F4F7F6 inputs, chips, hover */
-  --line: 214 224 220; /* #D6E0DC bordes suaves */
-  --line-strong: 184 200 195; /* #B8C8C3 bordes de controles */
+  --sunken: 248 248 247; /* inputs, chips, hover */
+  --line: 224 224 221; /* bordes suaves */
+  --line-strong: 188 188 184; /* bordes de controles */
 
   /* Tinta */
-  --ink: 16 35 31; /* #10231F */
-  --ink-soft: 58 82 76; /* #3A524C */
-  --ink-muted: 86 111 105; /* #566F69 */
+  --ink: 17 17 17; /* #111111 negro */
+  --ink-soft: 17 17 17; /* negro: todo el texto va en tinta */
+  --ink-muted: 17 17 17; /* negro (los placeholders usan ink/40) */
 
   /* Marca */
   --primary: 11 107 88; /* #0B6B58 verde nodo */
   --primary-strong: 8 83 68; /* #085344 hover */
   --primary-soft: 218 238 232; /* #DAEEE8 fondos tenues */
   --on-primary: 255 255 255;
-  --accent: 242 107 33; /* #F26B21 naranja de obra: solo señales */
+  --accent: 11 107 88; /* alias del verde: no hay segundo color */
 
-  /* Barra lateral */
-  --sidebar: 12 46 42; /* #0C2E2A */
-  --sidebar-ink: 197 218 213; /* #C5DAD5 */
-  --sidebar-line: 52 86 80; /* #345650 */
+  /* Barra / superficies oscuras: negro */
+  --sidebar: 17 17 17;
+  --sidebar-ink: 255 255 255;
+  --sidebar-line: 60 60 58;
 
-  /* Tonos de estado (fondo suave + texto) */
-  --info: 29 79 145;
-  --info-soft: 227 238 251;
-  --warn: 122 67 0;
-  --warn-soft: 252 239 210;
-  --flow: 67 56 168;
-  --flow-soft: 233 231 251;
-  --prop: 122 46 155;
-  --prop-soft: 243 230 249;
-  --ok: 20 104 58;
-  --ok-soft: 221 242 229;
-  --danger: 179 38 30;
-  --danger-soft: 252 230 228;
+  /*
+   * Paleta: un solo color (verde) más negro, blanco y grises neutros. Los
+   * "tonos" de estado son alias del verde o de neutros; lo urgente se marca
+   * con negro o contorno, no con otro color.
+   */
+  --info: 17 17 17;
+  --info-soft: 236 236 233; /* neutro */
+  --warn: 17 17 17;
+  --warn-soft: 236 236 233; /* neutro */
+  --flow: 11 107 88;
+  --flow-soft: 218 238 232; /* verde tenue */
+  --prop: 11 107 88;
+  --prop-soft: 218 238 232;
+  --ok: 11 107 88;
+  --ok-soft: 218 238 232;
+  --danger: 17 17 17;
+  --danger-soft: 236 236 233;
 }
 
 @layer base {
@@ -85,6 +89,27 @@
 
   ::selection {
     background-color: rgb(var(--primary) / 0.22);
+  }
+}
+
+@layer components {
+  /* Tarjeta estándar de la app: misma familia visual que el panel del login. */
+  .card {
+    @apply rounded-2xl border border-line bg-surface shadow-sm;
+  }
+
+  /* Tarjeta clicable: se eleva un poco al pasar el cursor. */
+  .card-hover {
+    @apply transition-shadow hover:shadow-md;
+  }
+
+  /* Campo de formulario con solo subrayado (igual que el login). */
+  .input-line {
+    @apply w-full rounded-none border-0 border-b-2 border-line-strong bg-transparent px-0.5 py-2.5 text-base text-ink outline-none transition-colors placeholder:text-ink/40 focus:border-primary focus-visible:shadow-none;
+  }
+
+  .label-line {
+    @apply block text-sm font-semibold text-ink;
   }
 }
 

@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AREAS, URGENCIAS, IMPACTOS } from "@/lib/lov";
 import { Logo } from "@/components/brand/Logo";
+import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 const step1Schema = z.object({
   companyName: z.string().min(1, "Requerido"),
@@ -36,6 +38,7 @@ type FormValues = z.infer<typeof fullSchema>;
 const STEP1_FIELDS = Object.keys(step1Schema.shape) as (keyof FormValues)[];
 
 export default function RegistroCasoPage() {
+  const toast = useToast();
   const [step, setStep] = useState<1 | 2>(1);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -76,8 +79,11 @@ export default function RegistroCasoPage() {
       // endpoint POST /api/cases esté disponible (issue #17). Por ahora se
       // asume { caseNumber: string } según el criterio de aceptación.
       setCaseNumber(data.caseNumber ?? data.case?.caseNumber ?? null);
+      toast.success("Tu caso quedó registrado.");
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : "Error inesperado");
+      const message = err instanceof Error ? err.message : "Error inesperado";
+      setServerError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -86,7 +92,7 @@ export default function RegistroCasoPage() {
   if (caseNumber) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-        <div className="w-full max-w-md rounded-lg border border-ok/40 bg-surface p-8 text-center">
+        <div className="w-full max-w-md card border-ok/40 p-8 text-center shadow-xl">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-ok-soft">
             <span className="text-2xl">✅</span>
           </div>
@@ -94,7 +100,7 @@ export default function RegistroCasoPage() {
           <p className="mt-2 text-sm text-ink-soft">
             Tu número de caso es:
           </p>
-          <p className="mt-3 rounded-md bg-sunken px-4 py-3 text-2xl font-bold tracking-wider text-ok">
+          <p className="mt-3 rounded-md bg-sunken px-4 py-3 text-2xl font-bold tracking-wider text-ink">
             {caseNumber}
           </p>
           <p className="mt-4 text-xs text-ink-muted">
@@ -110,22 +116,22 @@ export default function RegistroCasoPage() {
       <Logo />
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-full max-w-lg rounded-lg border border-line bg-surface p-8"
+        className="card w-full max-w-lg px-6 py-8 shadow-xl sm:px-10 sm:py-10"
       >
-        <h1 className="text-xl font-bold text-ink">Registra tu caso</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-ink">Registra tu caso</h1>
         <p className="mt-1 text-sm text-ink-soft">
           Paso {step} de 2 — {step === 1 ? "Datos de tu empresa" : "Cuéntanos qué necesitas"}
         </p>
 
         {step === 1 && (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-5">
             <Field label="Nombre de la empresa" error={errors.companyName?.message}>
               <input {...register("companyName")} className={inputClass} />
             </Field>
             <Field label="NIT (opcional)" error={errors.taxId?.message}>
               <input {...register("taxId")} className={inputClass} />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
               <Field label="País" error={errors.country?.message}>
                 <input {...register("country")} className={inputClass} />
               </Field>
@@ -154,21 +160,17 @@ export default function RegistroCasoPage() {
               Acepto los términos y condiciones de la plataforma
             </label>
             {errors.acceptsTerms && (
-              <p className="text-xs text-danger">{errors.acceptsTerms.message}</p>
+              <p className="text-xs text-ink">{errors.acceptsTerms.message}</p>
             )}
 
-            <button
-              type="button"
-              onClick={goToStep2}
-              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-on-primary hover:opacity-90"
-            >
+            <Button className="w-full py-3.5 text-base" onClick={goToStep2}>
               Siguiente
-            </button>
+            </Button>
           </div>
         )}
 
         {step === 2 && (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-5">
             <Field label="Título del caso" error={errors.title?.message}>
               <input {...register("title")} className={inputClass} />
             </Field>
@@ -201,26 +203,18 @@ export default function RegistroCasoPage() {
             </Field>
 
             {serverError && (
-              <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
+              <p className="rounded-md border-l-4 border-ink bg-info-soft px-3 py-2 text-sm text-ink">
                 {serverError}
               </p>
             )}
 
             <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="w-1/3 rounded-md border border-line-strong px-3 py-2 text-sm text-ink-soft hover:bg-sunken"
-              >
+              <Button variant="secondary" className="w-1/3 py-3.5 text-base" onClick={() => setStep(1)}>
                 Atrás
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-2/3 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-on-primary hover:opacity-90 disabled:opacity-50"
-              >
-                {submitting ? "Enviando…" : "Registrar caso"}
-              </button>
+              </Button>
+              <Button type="submit" className="w-2/3 py-3.5 text-base" loading={submitting} loadingText="Enviando…">
+                Registrar caso
+              </Button>
             </div>
           </div>
         )}
@@ -229,8 +223,7 @@ export default function RegistroCasoPage() {
   );
 }
 
-const inputClass =
-  "mt-1 w-full rounded-md border border-line-strong bg-sunken px-3 py-2 text-sm text-ink outline-none focus:border-primary";
+const inputClass = "input-line mt-1";
 
 function Field({
   label,
@@ -243,9 +236,9 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-ink-soft">{label}</label>
+      <label className="label-line">{label}</label>
       {children}
-      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+      {error && <p className="mt-1 text-xs text-ink">{error}</p>}
     </div>
   );
 }
