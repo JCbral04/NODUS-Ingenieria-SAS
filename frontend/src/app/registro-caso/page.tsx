@@ -24,15 +24,17 @@ const step1Schema = z.object({
 const step2Schema = z.object({
   title: z.string().min(5, "Mínimo 5 caracteres"),
   description: z.string().min(20, "Cuéntanos un poco más (mínimo 20 caracteres)"),
-  areaId: z.coerce.number({ invalid_type_error: "Selecciona un área" }),
-  urgencyId: z.coerce.number({ invalid_type_error: "Selecciona la urgencia" }),
-  impactId: z.coerce.number({ invalid_type_error: "Selecciona el impacto" }),
+  areaId: z.coerce.number({ error: "Selecciona un área" }),
+  urgencyId: z.coerce.number({ error: "Selecciona la urgencia" }),
+  impactId: z.coerce.number({ error: "Selecciona el impacto" }),
 });
 
-const fullSchema = step1Schema.merge(step2Schema);
-type FormValues = z.infer<typeof fullSchema>;
+const fullSchema = step1Schema.extend(step2Schema.shape);
+// Con zod 4 las conversiones (coerce) hacen que la entrada y la salida del formulario difieran.
+type FormInput = z.input<typeof fullSchema>;
+type FormValues = z.output<typeof fullSchema>;
 
-const STEP1_FIELDS = Object.keys(step1Schema.shape) as (keyof FormValues)[];
+const STEP1_FIELDS = Object.keys(step1Schema.shape) as (keyof FormInput)[];
 
 export default function RegistroCasoPage() {
   const [step, setStep] = useState<1 | 2>(1);
@@ -45,7 +47,7 @@ export default function RegistroCasoPage() {
     handleSubmit,
     trigger,
     formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(fullSchema) });
+  } = useForm<FormInput, unknown, FormValues>({ resolver: zodResolver(fullSchema) });
 
   async function goToStep2() {
     const valid = await trigger(STEP1_FIELDS);
