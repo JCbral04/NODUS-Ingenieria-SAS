@@ -9,6 +9,8 @@ export function PageHeader({
   description,
   eyebrow,
   actions,
+  centered,
+  children,
   className,
 }: {
   title: React.ReactNode;
@@ -16,6 +18,10 @@ export function PageHeader({
   /** Línea pequeña sobre el título (por ejemplo, un enlace para volver). */
   eyebrow?: React.ReactNode;
   actions?: React.ReactNode;
+  /** Centra título, subtítulo y contenido extra (las acciones pasan debajo). */
+  centered?: boolean;
+  /** Contenido extra bajo el subtítulo (por ejemplo, cifras). */
+  children?: React.ReactNode;
   className?: string;
 }) {
   return (
@@ -26,11 +32,17 @@ export function PageHeader({
         className,
       )}
     >
-      <div className="mx-auto flex max-w-[1400px] flex-wrap items-start justify-between gap-4 px-4 py-7 lg:px-8 lg:py-9">
+      <div
+        className={cn(
+          "mx-auto flex max-w-[1400px] flex-wrap gap-4 px-4 py-7 lg:px-8 lg:py-9",
+          centered ? "flex-col items-center text-center" : "items-start justify-between",
+        )}
+      >
         <div className="min-w-0">
           {eyebrow && <div className="mb-2 text-sm font-medium text-white/90">{eyebrow}</div>}
           <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">{title}</h1>
           {description && <p className="mt-1.5 text-base text-white/90">{description}</p>}
+          {children}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-3 text-white">{actions}</div>}
       </div>
