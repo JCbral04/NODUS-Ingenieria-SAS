@@ -8,6 +8,10 @@ import { useAuth } from "@/lib/auth";
 import { statusLabel, statusColor } from "@/lib/case-status";
 import { TRANSITIONS } from "@/lib/transitions";
 import { AREAS, TIPOS_INTERVENCION, COMPLEJIDADES, IMPACTOS } from "@/lib/lov";
+import { Button } from "@/components/ui/Button";
+import { Skeleton, SkeletonCard, SkeletonRegion } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
+import { useConfirm } from "@/components/ui/Confirm";
 
 interface LovLabel {
   label: string;
@@ -80,6 +84,8 @@ export default function CasoDetallePage() {
   const params = useParams();
   const id = params.id as string;
   const { user } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [data, setData] = useState<CaseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -129,6 +135,13 @@ export default function CasoDetallePage() {
   }, [data?.status, id]);
 
   async function handleAssign(applicationId: number) {
+    const name = applicants?.find((a) => a.id === applicationId)?.consultant.user.fullName ?? "este consultor";
+    const ok = await confirm({
+      title: `¿Asignar a ${name}?`,
+      message: "Será el consultor único del caso y los demás postulantes quedarán descartados.",
+      confirmLabel: "Asignar consultor",
+    });
+    if (!ok) return;
     setAssignError(null);
     setAssigningId(applicationId);
     try {
@@ -136,9 +149,12 @@ export default function CasoDetallePage() {
         method: "POST",
         body: JSON.stringify({ applicationId }),
       });
+      toast.success(`${name} quedó asignado al caso.`);
       loadCase();
     } catch (err) {
-      setAssignError(err instanceof Error ? err.message : "No se pudo asignar el consultor");
+      const message = err instanceof Error ? err.message : "No se pudo asignar el consultor";
+      setAssignError(message);
+      toast.error(message);
     } finally {
       setAssigningId(null);
     }
@@ -146,6 +162,16 @@ export default function CasoDetallePage() {
 
   async function handleTransition() {
     if (!selectedTarget) return;
+    const isClosing = selectedTarget === "CERRADO" || selectedTarget === "CERRADO_SIN_CONTRATACION";
+    const ok = await confirm({
+      title: `¿Pasar el caso a "${statusLabel(selectedTarget)}"?`,
+      message: isClosing
+        ? "Es un estado final: después no habrá más transiciones disponibles."
+        : "El cambio queda registrado en el historial del caso.",
+      confirmLabel: "Cambiar estado",
+      tone: isClosing ? "danger" : "default",
+    });
+    if (!ok) return;
     setTransitionError(null);
     setTransitioning(true);
     try {
@@ -153,11 +179,14 @@ export default function CasoDetallePage() {
         method: "PATCH",
         body: JSON.stringify({ targetStatus: selectedTarget, note: note || undefined }),
       });
+      toast.success(`Caso en "${statusLabel(selectedTarget)}".`);
       setNote("");
       setSelectedTarget("");
       loadCase();
     } catch (err) {
-      setTransitionError(err instanceof Error ? err.message : "No se pudo cambiar el estado");
+      const message = err instanceof Error ? err.message : "No se pudo cambiar el estado";
+      setTransitionError(message);
+      toast.error(message);
     } finally {
       setTransitioning(false);
     }
@@ -188,9 +217,12 @@ export default function CasoDetallePage() {
       setClsImpactId("");
       setClsIsEligible(true);
       setClsNotes("");
+      toast.success("Clasificación registrada.");
       loadCase();
     } catch (err) {
-      setClsError(err instanceof Error ? err.message : "No se pudo registrar la clasificación");
+      const message = err instanceof Error ? err.message : "No se pudo registrar la clasificación";
+      setClsError(message);
+      toast.error(message);
     } finally {
       setClsSubmitting(false);
     }
@@ -206,7 +238,21 @@ export default function CasoDetallePage() {
   }
 
   if (!data) {
-    return <p className="text-sm text-ink-muted">Cargando caso…</p>;
+    return (
+      <SkeletonRegion label="Cargando caso">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="mt-5 h-8 w-56" />
+        <Skeleton className="mt-3 h-4 w-80" />
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <SkeletonCard lines={4} />
+            <SkeletonCard lines={3} />
+            <SkeletonCard lines={2} />
+          </div>
+          <SkeletonCard lines={6} />
+        </div>
+      </SkeletonRegion>
+    );
   }
 
   const currentClassification = data.classifications?.[0] ?? null;
@@ -358,14 +404,9 @@ export default function CasoDetallePage() {
                 <p className="mt-3 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{clsError}</p>
               )}
 
-              <button
-                type="button"
-                disabled={clsSubmitting}
-                onClick={handleClassify}
-                className="mt-3 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:opacity-90 disabled:opacity-50"
-              >
-                {clsSubmitting ? "Guardando…" : "Registrar clasificación"}
-              </button>
+              <Button className="mt-3" loading={clsSubmitting} loadingText="Guardando…" onClick={handleClassify}>
+                Registrar clasificación
+              </Button>
             </section>
           )}
 
@@ -413,12 +454,16 @@ export default function CasoDetallePage() {
               )}
 
               {!applicantsError && !applicants && (
-                <p className="mt-2 text-sm text-ink-muted">Cargando postulantes…</p>
+                <SkeletonRegion label="Cargando postulantes" className="mt-3 space-y-3">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </SkeletonRegion>
               )}
 
               {applicants && applicants.length === 0 && (
                 <p className="mt-2 text-sm text-ink-muted">
-                  Todavía no hay postulantes para este caso.
+                  Aún nadie se postuló. Los consultores con la especialidad del caso lo ven en su bolsa
+                  y aparecerán aquí apenas envíen su postulación.
                 </p>
               )}
 
@@ -438,14 +483,15 @@ export default function CasoDetallePage() {
                           {a.consultant.user.email} · {a.consultant.specialty?.label ?? "—"}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        disabled={assigningId === a.id}
+                      <Button
+                        className="px-3 py-1.5"
+                        loading={assigningId === a.id}
+                        disabled={assigningId !== null && assigningId !== a.id}
+                        loadingText="Asignando…"
                         onClick={() => handleAssign(a.id)}
-                        className="rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-on-primary hover:opacity-90 disabled:opacity-50"
                       >
-                        {assigningId === a.id ? "Asignando…" : "Asignar"}
-                      </button>
+                        Asignar
+                      </Button>
                     </div>
                     <dl className="mt-3 space-y-2 text-sm">
                       <div>
@@ -508,14 +554,14 @@ export default function CasoDetallePage() {
                     </p>
                   )}
 
-                  <button
-                    type="button"
-                    disabled={!selectedTarget || transitioning}
+                  <Button
+                    disabled={!selectedTarget}
+                    loading={transitioning}
+                    loadingText="Aplicando…"
                     onClick={handleTransition}
-                    className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:opacity-90 disabled:opacity-50"
                   >
-                    {transitioning ? "Aplicando…" : "Confirmar cambio de estado"}
-                  </button>
+                    {selectedTarget ? `Cambiar a "${statusLabel(selectedTarget)}"` : "Elige un estado"}
+                  </Button>
                 </div>
               )}
             </section>

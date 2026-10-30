@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { LogoMark } from "@/components/brand/Logo";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -18,8 +19,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   if (isLoading || !user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-canvas">
-        <p className="text-sm text-ink-muted">Cargando…</p>
+      <div
+        role="status"
+        aria-label="Cargando sesión"
+        className="flex h-screen items-center justify-center bg-canvas"
+      >
+        <LogoMark size={40} className="animate-pulse" />
       </div>
     );
   }

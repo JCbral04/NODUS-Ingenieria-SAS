@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { Inbox } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton, SkeletonRegion } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
 
 interface PoolCase {
   id: number;
@@ -51,12 +56,30 @@ export default function WorkflowPage() {
         <p className="mt-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
       )}
 
-      {!error && !cases && <p className="mt-6 text-sm text-ink-muted">Cargando bolsa…</p>}
+      {!error && !cases && (
+        <SkeletonRegion label="Cargando bolsa de casos" className="mt-6 space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-lg border border-line bg-surface p-5">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="mt-3 h-5 w-2/3" />
+              <div className="mt-3 flex gap-2">
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-6 w-32 rounded-full" />
+                <Skeleton className="h-6 w-28 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </SkeletonRegion>
+      )}
 
       {cases && cases.length === 0 && (
-        <p className="mt-6 text-sm text-ink-muted">
-          No hay casos disponibles para tu especialidad en este momento.
-        </p>
+        <div className="mt-6">
+          <EmptyState
+            icon={Inbox}
+            title="No hay casos para tu especialidad por ahora"
+            description="Cuando Advisory publique un caso que encaje con tu perfil, aparecerá aquí para que te postules."
+          />
+        </div>
       )}
 
       <div className="mt-6 space-y-4">
@@ -94,6 +117,7 @@ function PoolCaseCard({
   const [relevantExperience, setRelevantExperience] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const toast = useToast();
 
   async function handleApply() {
     if (!interestStatement || !relevance || !relevantExperience) {
@@ -107,9 +131,12 @@ function PoolCaseCard({
         method: "POST",
         body: JSON.stringify({ interestStatement, isAvailable, relevance, relevantExperience }),
       });
+      toast.success(`Te postulaste al caso ${caseItem.caseNumber}.`);
       onApplied();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo enviar la postulación");
+      const message = err instanceof Error ? err.message : "No se pudo enviar la postulación";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -192,14 +219,9 @@ function PoolCaseCard({
             <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
           )}
 
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={handleApply}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:opacity-90 disabled:opacity-50"
-          >
-            {submitting ? "Enviando…" : "Enviar postulación"}
-          </button>
+          <Button loading={submitting} loadingText="Enviando…" onClick={handleApply}>
+            Enviar postulación
+          </Button>
         </div>
       )}
     </div>
