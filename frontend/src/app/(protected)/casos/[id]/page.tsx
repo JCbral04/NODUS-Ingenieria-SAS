@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { statusLabel, statusColor, slaLabel, slaTone } from "@/lib/case-status";
+import { statusLabel, slaLabel } from "@/lib/case-status";
 import { TRANSITIONS } from "@/lib/transitions";
 import { AREAS, TIPOS_INTERVENCION, COMPLEJIDADES, IMPACTOS } from "@/lib/lov";
 import { Button } from "@/components/ui/Button";
@@ -255,19 +255,21 @@ export default function CasoDetallePage() {
 
   return (
     <div>
-      <Link href="/casos" className="text-sm text-ink-soft hover:underline">← Volver a Casos</Link>
-
       <PageHeader
-        className="mt-4"
+        eyebrow={
+          <Link href="/casos" className="hover:underline">
+            ← Volver a Casos
+          </Link>
+        }
         title={data.caseNumber}
         description={data.title}
         actions={
           <>
-            <span className={`text-base ${statusColor(data.status)}`}>
-              {statusLabel(data.status)}
-            </span>
+            <span className="text-base font-semibold text-white">{statusLabel(data.status)}</span>
             {sla?.state && (
-              <span className={`text-base ${slaTone(sla.state)}`}>
+              <span
+                className={`text-base text-white ${sla.state === "VENCIDO" ? "font-bold uppercase tracking-wide" : "font-semibold"}`}
+              >
                 SLA: {slaLabel(sla.state)}
                 {typeof sla.percent === "number" && ` (${sla.percent}%)`}
                 {typeof sla.elapsedHours === "number" && ` · ${sla.elapsedHours}h`}

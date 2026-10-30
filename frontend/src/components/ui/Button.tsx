@@ -1,12 +1,14 @@
 import { cn } from "@/lib/utils";
 import { Spinner } from "./Spinner";
 
-type Variant = "primary" | "secondary" | "danger";
+type Variant = "primary" | "secondary" | "danger" | "inverse";
 
 const VARIANTS: Record<Variant, string> = {
   primary: "bg-primary text-on-primary hover:bg-primary-strong",
   secondary: "border border-line-strong bg-surface text-ink-soft hover:bg-sunken hover:text-ink",
   danger: "bg-danger text-white hover:opacity-90",
+  /** Para fondos oscuros (el encabezado con degradado). */
+  inverse: "border border-white bg-transparent text-white hover:bg-white/15",
 };
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

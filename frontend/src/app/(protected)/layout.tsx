@@ -28,9 +28,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-canvas text-ink">
+    <div className="min-h-screen overflow-x-clip bg-canvas text-ink">
       <Topbar />
-      <main className="mx-auto max-w-[1400px] p-4 lg:p-8">{children}</main>
+      <main className="mx-auto max-w-[1400px] p-4 pb-10 lg:p-8 lg:pb-12">{children}</main>
     </div>
   );
 }

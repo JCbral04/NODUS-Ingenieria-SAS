@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Briefcase, RefreshCw, Search, SearchX } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { ALL_STATUSES, statusLabel, statusColor, statusProgress } from "@/lib/case-status";
+import { ALL_STATUSES, stageLabel, stageOf, statusLabel, statusColor, statusProgress } from "@/lib/case-status";
 import { Skeleton, SkeletonRegion } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
@@ -111,16 +111,20 @@ function CasosContent() {
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
 
-  // El filtro de estado vive en la URL: se puede compartir y funciona desde el Dashboard.
+  // Los filtros viven en la URL: se pueden compartir y funcionan desde el Dashboard.
   const filter = searchParams.get("estado") ?? "TODOS";
+  const etapa = searchParams.get("etapa");
+  const urgencia = searchParams.get("urgencia") ?? "TODAS";
 
-  function setFilter(value: string) {
+  function setParam(name: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value === "TODOS") params.delete("estado");
-    else params.set("estado", value);
+    if (!value || value === "TODOS" || value === "TODAS") params.delete(name);
+    else params.set(name, value);
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname);
   }
+
+  const setFilter = (value: string) => setParam("estado", value);
 
   const load = useCallback(
     async (manual = false) => {
@@ -149,10 +153,16 @@ function CasosContent() {
     const q = query.trim().toLowerCase();
     return cases.filter((c) => {
       if (filter !== "TODOS" && c.status !== filter) return false;
+      if (etapa && stageOf(c.status) !== etapa) return false;
+      if (urgencia !== "TODAS") {
+        const label = c.urgency?.label;
+        const known = label === "Alta" || label === "Media" || label === "Baja";
+        if (urgencia === "sin" ? known : label !== urgencia) return false;
+      }
       if (!q) return true;
       return [c.caseNumber, c.title, c.company?.name ?? ""].some((v) => v.toLowerCase().includes(q));
     });
-  }, [cases, filter, query]);
+  }, [cases, filter, etapa, urgencia, query]);
 
   const groups = useMemo(() => {
     if (!visibleCases) return [];
@@ -167,7 +177,7 @@ function CasosContent() {
 
   function clearFilters() {
     setQuery("");
-    setFilter("TODOS");
+    router.replace(pathname);
   }
 
   if (error && !cases) {
@@ -186,7 +196,7 @@ function CasosContent() {
 
   if (!cases || !visibleCases) return <CasosSkeleton />;
 
-  const hasFilters = filter !== "TODOS" || query.trim() !== "";
+  const hasFilters = filter !== "TODOS" || etapa !== null || urgencia !== "TODAS" || query.trim() !== "";
 
   return (
     <div>
@@ -217,6 +227,18 @@ function CasosContent() {
             </option>
           ))}
         </select>
+        <select
+          value={urgencia}
+          onChange={(e) => setParam("urgencia", e.target.value)}
+          aria-label="Filtrar por urgencia"
+          className="rounded-full border border-line-strong bg-surface px-4 py-2 text-sm text-ink"
+        >
+          <option value="TODAS">Todas las urgencias</option>
+          <option value="Alta">Urgencia alta</option>
+          <option value="Media">Urgencia media</option>
+          <option value="Baja">Urgencia baja</option>
+          <option value="sin">Sin urgencia</option>
+        </select>
         <Button variant="secondary" className="px-3 py-2" onClick={() => load(true)} loading={refreshing} aria-label="Actualizar lista">
           {!refreshing && <RefreshCw className="h-4 w-4" aria-hidden />}
         </Button>
@@ -227,6 +249,19 @@ function CasosContent() {
           {hasFilters
             ? `${visibleCases.length} de ${cases.length} casos`
             : `${cases.length} ${cases.length === 1 ? "caso" : "casos"}`}
+          {etapa && (
+            <span className="ml-3 font-semibold">
+              Etapa: {stageLabel(etapa)}
+              <button
+                type="button"
+                onClick={() => setParam("etapa", null)}
+                aria-label={`Quitar el filtro de etapa ${stageLabel(etapa)}`}
+                className="ml-1.5 underline underline-offset-4"
+              >
+                quitar
+              </button>
+            </span>
+          )}
           {hasFilters && (
             <button type="button" onClick={clearFilters} className="ml-3 font-semibold text-ink underline underline-offset-4">
               Limpiar filtros
@@ -257,7 +292,7 @@ function CasosContent() {
           <EmptyState
             icon={SearchX}
             title="Ningún caso coincide con tu búsqueda"
-            description="Prueba con otro término o quita el filtro de estado."
+            description="Prueba con otro término o quita los filtros."
           >
             <Button variant="secondary" onClick={clearFilters}>
               Limpiar filtros

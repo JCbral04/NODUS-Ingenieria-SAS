@@ -47,6 +47,29 @@ export const STATUS_COLORS: Record<string, string> = {
 
 export const ALL_STATUSES = Object.keys(STATUS_LABELS);
 
+/** Etapas del flujo: agrupan los estados para el mapa del Dashboard y el filtro de Casos. */
+export const STAGES = [
+  { key: "REVISION", label: "Revisión", statuses: ["CREADO", "EN_REVISION", "CLASIFICADO"] },
+  { key: "POSTULACION", label: "Postulación", statuses: ["EN_POSTULACION", "ASIGNADO"] },
+  {
+    key: "PROPUESTA",
+    label: "Propuesta",
+    statuses: ["PROPUESTA_EN_DISENO", "PROPUESTA_LISTA_QA", "PROPUESTA_ENVIADA", "AJUSTES_PROPUESTA"],
+  },
+  { key: "DECISION", label: "Decisión", statuses: ["EN_DECISION_CLIENTE", "PROPUESTA_ACEPTADA"] },
+  { key: "CONTRATACION", label: "Contratación", statuses: ["PENDIENTE_CONTRATACION", "AUTORIZADO_EJECUCION"] },
+  { key: "EJECUCION", label: "Ejecución", statuses: ["EN_EJECUCION", "LISTO_PARA_CIERRE"] },
+  { key: "CIERRE", label: "Cerrado", statuses: ["CERRADO", "CERRADO_SIN_CONTRATACION"] },
+];
+
+export function stageOf(status: string) {
+  return STAGES.find((s) => s.statuses.includes(status))?.key;
+}
+
+export function stageLabel(key: string) {
+  return STAGES.find((s) => s.key === key)?.label ?? key;
+}
+
 export function statusLabel(code: string) {
   return STATUS_LABELS[code] ?? code;
 }
