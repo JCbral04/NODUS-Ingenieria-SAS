@@ -19,23 +19,23 @@ export const STATUS_LABELS: Record<string, string> = {
 };
 
 export const STATUS_COLORS: Record<string, string> = {
-  CREADO: "bg-blue-900/40 text-blue-300",
-  EN_REVISION: "bg-amber-900/40 text-amber-300",
-  CLASIFICADO: "bg-indigo-900/40 text-indigo-300",
-  EN_POSTULACION: "bg-indigo-900/40 text-indigo-300",
-  ASIGNADO: "bg-indigo-900/40 text-indigo-300",
-  PROPUESTA_EN_DISENO: "bg-purple-900/40 text-purple-300",
-  PROPUESTA_LISTA_QA: "bg-purple-900/40 text-purple-300",
-  PROPUESTA_ENVIADA: "bg-purple-900/40 text-purple-300",
-  EN_DECISION_CLIENTE: "bg-amber-900/40 text-amber-300",
-  AJUSTES_PROPUESTA: "bg-amber-900/40 text-amber-300",
-  PROPUESTA_ACEPTADA: "bg-emerald-900/40 text-emerald-300",
-  PENDIENTE_CONTRATACION: "bg-emerald-900/40 text-emerald-300",
-  AUTORIZADO_EJECUCION: "bg-emerald-900/40 text-emerald-300",
-  EN_EJECUCION: "bg-emerald-900/40 text-emerald-300",
-  LISTO_PARA_CIERRE: "bg-emerald-900/40 text-emerald-300",
-  CERRADO: "bg-green-900/40 text-green-300",
-  CERRADO_SIN_CONTRATACION: "bg-red-900/40 text-red-300",
+  CREADO: "bg-info-soft text-info",
+  EN_REVISION: "bg-warn-soft text-warn",
+  CLASIFICADO: "bg-flow-soft text-flow",
+  EN_POSTULACION: "bg-flow-soft text-flow",
+  ASIGNADO: "bg-flow-soft text-flow",
+  PROPUESTA_EN_DISENO: "bg-prop-soft text-prop",
+  PROPUESTA_LISTA_QA: "bg-prop-soft text-prop",
+  PROPUESTA_ENVIADA: "bg-prop-soft text-prop",
+  EN_DECISION_CLIENTE: "bg-warn-soft text-warn",
+  AJUSTES_PROPUESTA: "bg-warn-soft text-warn",
+  PROPUESTA_ACEPTADA: "bg-ok-soft text-ok",
+  PENDIENTE_CONTRATACION: "bg-ok-soft text-ok",
+  AUTORIZADO_EJECUCION: "bg-ok-soft text-ok",
+  EN_EJECUCION: "bg-ok-soft text-ok",
+  LISTO_PARA_CIERRE: "bg-ok-soft text-ok",
+  CERRADO: "bg-ok-soft text-ok",
+  CERRADO_SIN_CONTRATACION: "bg-danger-soft text-danger",
 };
 
 export const ALL_STATUSES = Object.keys(STATUS_LABELS);
@@ -45,5 +45,5 @@ export function statusLabel(code: string) {
 }
 
 export function statusColor(code: string) {
-  return STATUS_COLORS[code] ?? "bg-slate-800 text-slate-300";
+  return STATUS_COLORS[code] ?? "bg-sunken text-ink-soft";
 }

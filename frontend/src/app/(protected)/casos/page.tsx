@@ -37,7 +37,7 @@ export default function CasosPage() {
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-200"
+          className="rounded-md border border-line-strong bg-sunken px-3 py-1.5 text-sm text-ink"
         >
           <option value="TODOS">Todos los estados</option>
           {ALL_STATUSES.map((s) => (
@@ -47,19 +47,19 @@ export default function CasosPage() {
       </div>
 
       {error && (
-        <p className="mt-4 rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">{error}</p>
+        <p className="mt-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
       )}
 
-      {!error && !cases && <p className="mt-6 text-sm text-slate-500">Cargando casos…</p>}
+      {!error && !cases && <p className="mt-6 text-sm text-ink-muted">Cargando casos…</p>}
 
       {cases && cases.length === 0 && (
-        <p className="mt-6 text-sm text-slate-500">Todavía no hay casos registrados.</p>
+        <p className="mt-6 text-sm text-ink-muted">Todavía no hay casos registrados.</p>
       )}
 
       {visibleCases && visibleCases.length > 0 && (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-slate-800">
+        <div className="mt-6 overflow-x-auto rounded-lg border border-line">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-900 text-slate-400">
+            <thead className="bg-sunken text-ink-soft">
               <tr>
                 <th className="px-4 py-3 font-medium"># Caso</th>
                 <th className="px-4 py-3 font-medium">Título</th>
@@ -68,20 +68,20 @@ export default function CasosPage() {
                 <th className="px-4 py-3 font-medium">Estado</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-surface">
               {visibleCases.map((c) => (
                 <tr
                   key={c.id}
-                  className="border-t border-slate-800 hover:bg-slate-900/60"
+                  className="border-t border-line hover:bg-sunken"
                 >
                   <td className="px-4 py-3">
-                    <Link href={`/casos/${c.id}`} className="font-medium text-slate-100 hover:underline">
+                    <Link href={`/casos/${c.id}`} className="font-medium text-ink hover:underline">
                       {c.caseNumber}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-300">{c.title}</td>
-                  <td className="px-4 py-3 text-slate-300">{c.company?.name ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-300">{c.urgency?.label ?? "—"}</td>
+                  <td className="px-4 py-3 text-ink-soft">{c.title}</td>
+                  <td className="px-4 py-3 text-ink-soft">{c.company?.name ?? "—"}</td>
+                  <td className="px-4 py-3 text-ink-soft">{c.urgency?.label ?? "—"}</td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusColor(c.status)}`}>
                       {statusLabel(c.status)}
@@ -95,7 +95,7 @@ export default function CasosPage() {
       )}
 
       {visibleCases && visibleCases.length === 0 && cases && cases.length > 0 && (
-        <p className="mt-6 text-sm text-slate-500">No hay casos con ese estado.</p>
+        <p className="mt-6 text-sm text-ink-muted">No hay casos con ese estado.</p>
       )}
     </div>
   );

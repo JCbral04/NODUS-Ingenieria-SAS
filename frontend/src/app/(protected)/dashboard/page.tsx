@@ -44,11 +44,11 @@ export default function DashboardPage() {
   }, [cases]);
 
   if (error) {
-    return <p className="rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">{error}</p>;
+    return <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>;
   }
 
   if (!cases) {
-    return <p className="text-sm text-slate-500">Cargando indicadores…</p>;
+    return <p className="text-sm text-ink-muted">Cargando indicadores…</p>;
   }
 
   const countsByStatus = new Map<string, number>();
@@ -63,36 +63,36 @@ export default function DashboardPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p className="mt-1 text-sm text-slate-400">Indicadores generales del pipeline de casos.</p>
+      <p className="mt-1 text-sm text-ink-soft">Indicadores generales del pipeline de casos.</p>
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-          <p className="text-sm text-slate-500">Total de casos</p>
-          <p className="mt-1 text-2xl font-bold text-slate-100">{cases.length}</p>
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <p className="text-sm text-ink-muted">Total de casos</p>
+          <p className="mt-1 text-2xl font-bold text-ink">{cases.length}</p>
         </div>
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-          <p className="text-sm text-slate-500">SLA vencido</p>
-          <p className="mt-1 text-2xl font-bold text-red-400">
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <p className="text-sm text-ink-muted">SLA vencido</p>
+          <p className="mt-1 text-2xl font-bold text-danger">
             {slaCounts ? slaCounts.vencido : "…"}
           </p>
         </div>
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-          <p className="text-sm text-slate-500">SLA por vencer</p>
-          <p className="mt-1 text-2xl font-bold text-amber-400">
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <p className="text-sm text-ink-muted">SLA por vencer</p>
+          <p className="mt-1 text-2xl font-bold text-warn">
             {slaCounts ? slaCounts.porVencer : "…"}
           </p>
         </div>
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-          <p className="text-sm text-slate-500">Estados distintos</p>
-          <p className="mt-1 text-2xl font-bold text-slate-100">{countsByStatus.size}</p>
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <p className="text-sm text-ink-muted">Estados distintos</p>
+          <p className="mt-1 text-2xl font-bold text-ink">{countsByStatus.size}</p>
         </div>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
-          <h2 className="font-semibold text-slate-100">Casos por estado</h2>
+        <div className="rounded-lg border border-line bg-surface p-5">
+          <h2 className="font-semibold text-ink">Casos por estado</h2>
           {countsByStatus.size === 0 ? (
-            <p className="mt-2 text-sm text-slate-500">Todavía no hay casos registrados.</p>
+            <p className="mt-2 text-sm text-ink-muted">Todavía no hay casos registrados.</p>
           ) : (
             <div className="mt-4 space-y-2">
               {[...countsByStatus.entries()]
@@ -102,25 +102,25 @@ export default function DashboardPage() {
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusColor(status)}`}>
                       {statusLabel(status)}
                     </span>
-                    <span className="text-sm text-slate-300">{count}</span>
+                    <span className="text-sm text-ink-soft">{count}</span>
                   </div>
                 ))}
             </div>
           )}
         </div>
 
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
-          <h2 className="font-semibold text-slate-100">Últimos casos creados</h2>
+        <div className="rounded-lg border border-line bg-surface p-5">
+          <h2 className="font-semibold text-ink">Últimos casos creados</h2>
           {latest.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-500">Todavía no hay casos registrados.</p>
+            <p className="mt-2 text-sm text-ink-muted">Todavía no hay casos registrados.</p>
           ) : (
             <ul className="mt-4 space-y-3">
               {latest.map((c) => (
                 <li key={c.id}>
                   <Link href={`/casos/${c.id}`} className="flex items-center justify-between hover:underline">
                     <div>
-                      <p className="text-sm font-medium text-slate-100">{c.caseNumber} — {c.title}</p>
-                      <p className="text-xs text-slate-500">{c.company?.name ?? "—"}</p>
+                      <p className="text-sm font-medium text-ink">{c.caseNumber} — {c.title}</p>
+                      <p className="text-xs text-ink-muted">{c.company?.name ?? "—"}</p>
                     </div>
                     <span className={`rounded-full px-2 py-1 text-xs font-medium ${statusColor(c.status)}`}>
                       {statusLabel(c.status)}

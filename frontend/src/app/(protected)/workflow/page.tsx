@@ -33,7 +33,7 @@ export default function WorkflowPage() {
     return (
       <div>
         <h1 className="text-2xl font-bold">Workflow</h1>
-        <p className="mt-4 text-sm text-slate-500">
+        <p className="mt-4 text-sm text-ink-muted">
           La bolsa de casos disponibles solo aplica al rol Consultor.
         </p>
       </div>
@@ -43,18 +43,18 @@ export default function WorkflowPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Bolsa de casos disponibles</h1>
-      <p className="mt-1 text-sm text-slate-400">
+      <p className="mt-1 text-sm text-ink-soft">
         Casos publicados que coinciden con tu especialidad.
       </p>
 
       {error && (
-        <p className="mt-4 rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">{error}</p>
+        <p className="mt-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
       )}
 
-      {!error && !cases && <p className="mt-6 text-sm text-slate-500">Cargando bolsa…</p>}
+      {!error && !cases && <p className="mt-6 text-sm text-ink-muted">Cargando bolsa…</p>}
 
       {cases && cases.length === 0 && (
-        <p className="mt-6 text-sm text-slate-500">
+        <p className="mt-6 text-sm text-ink-muted">
           No hay casos disponibles para tu especialidad en este momento.
         </p>
       )}
@@ -116,34 +116,34 @@ function PoolCaseCard({
   }
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
+    <div className="rounded-lg border border-line bg-surface p-5">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-slate-500">{caseItem.caseNumber}</p>
-          <h3 className="font-semibold text-slate-100">{caseItem.title}</h3>
-          <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
-            {caseItem.area && <span className="rounded-full bg-slate-800 px-2 py-1">{caseItem.area}</span>}
+          <p className="text-sm text-ink-muted">{caseItem.caseNumber}</p>
+          <h3 className="font-semibold text-ink">{caseItem.title}</h3>
+          <div className="mt-2 flex flex-wrap gap-2 text-xs text-ink-soft">
+            {caseItem.area && <span className="rounded-full bg-sunken px-2 py-1">{caseItem.area}</span>}
             {caseItem.interventionType && (
-              <span className="rounded-full bg-slate-800 px-2 py-1">{caseItem.interventionType}</span>
+              <span className="rounded-full bg-sunken px-2 py-1">{caseItem.interventionType}</span>
             )}
             {caseItem.complexity && (
-              <span className="rounded-full bg-slate-800 px-2 py-1">Complejidad: {caseItem.complexity}</span>
+              <span className="rounded-full bg-sunken px-2 py-1">Complejidad: {caseItem.complexity}</span>
             )}
             {caseItem.urgency && (
-              <span className="rounded-full bg-slate-800 px-2 py-1">Urgencia: {caseItem.urgency}</span>
+              <span className="rounded-full bg-sunken px-2 py-1">Urgencia: {caseItem.urgency}</span>
             )}
           </div>
         </div>
 
         {hasApplied ? (
-          <span className="rounded-md bg-emerald-900/40 px-3 py-1.5 text-sm text-emerald-300">
+          <span className="rounded-md bg-ok-soft px-3 py-1.5 text-sm text-ok">
             Postulado ✓
           </span>
         ) : (
           <button
             type="button"
             onClick={onToggle}
-            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800"
+            className="rounded-md border border-line-strong px-3 py-1.5 text-sm text-ink-soft hover:bg-sunken"
           >
             {isOpen ? "Cancelar" : "Postularme"}
           </button>
@@ -151,35 +151,35 @@ function PoolCaseCard({
       </div>
 
       {isOpen && !hasApplied && (
-        <div className="mt-4 space-y-3 border-t border-slate-800 pt-4">
+        <div className="mt-4 space-y-3 border-t border-line pt-4">
           <div>
-            <label className="block text-sm text-slate-400">¿Por qué te interesa este caso?</label>
+            <label className="block text-sm text-ink-soft">¿Por qué te interesa este caso?</label>
             <textarea
               value={interestStatement}
               onChange={(e) => setInterestStatement(e.target.value)}
               rows={2}
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-500"
+              className="mt-1 w-full rounded-md border border-line-strong bg-sunken px-3 py-2 text-sm text-ink outline-none focus:border-primary"
             />
           </div>
           <div>
-            <label className="block text-sm text-slate-400">Pertinencia de tu perfil</label>
+            <label className="block text-sm text-ink-soft">Pertinencia de tu perfil</label>
             <textarea
               value={relevance}
               onChange={(e) => setRelevance(e.target.value)}
               rows={2}
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-500"
+              className="mt-1 w-full rounded-md border border-line-strong bg-sunken px-3 py-2 text-sm text-ink outline-none focus:border-primary"
             />
           </div>
           <div>
-            <label className="block text-sm text-slate-400">Experiencia relevante</label>
+            <label className="block text-sm text-ink-soft">Experiencia relevante</label>
             <textarea
               value={relevantExperience}
               onChange={(e) => setRelevantExperience(e.target.value)}
               rows={2}
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-500"
+              className="mt-1 w-full rounded-md border border-line-strong bg-sunken px-3 py-2 text-sm text-ink outline-none focus:border-primary"
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-slate-300">
+          <label className="flex items-center gap-2 text-sm text-ink-soft">
             <input
               type="checkbox"
               checked={isAvailable}
@@ -189,14 +189,14 @@ function PoolCaseCard({
           </label>
 
           {error && (
-            <p className="rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">{error}</p>
+            <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
           )}
 
           <button
             type="button"
             disabled={submitting}
             onClick={handleApply}
-            className="rounded-md bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-950 hover:opacity-90 disabled:opacity-50"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? "Enviando…" : "Enviar postulación"}
           </button>

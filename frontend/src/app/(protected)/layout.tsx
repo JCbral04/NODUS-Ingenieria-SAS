@@ -18,18 +18,18 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   if (isLoading || !user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <p className="text-sm text-slate-500">Cargando…</p>
+      <div className="flex h-screen items-center justify-center bg-canvas">
+        <p className="text-sm text-ink-muted">Cargando…</p>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-slate-950">
+    <div className="flex h-screen bg-canvas">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar />
-        <main className="flex-1 overflow-y-auto p-6 text-slate-100">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 text-ink">{children}</main>
       </div>
     </div>
   );

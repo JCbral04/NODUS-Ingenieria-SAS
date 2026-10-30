@@ -1,3 +1,98 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * Tema NODUS — "papel de plano".
+ * Fuente única de la identidad visual. Los componentes usan los nombres
+ * semánticos de tailwind.config.ts (bg-canvas, text-ink, bg-primary…),
+ * nunca colores sueltos. Los valores van como canales RGB para que
+ * funcionen las opacidades de Tailwind (bg-primary/20).
+ */
+:root {
+  /* Tipografía (fuentes autoalojadas con @fontsource, ver layout.tsx) */
+  --font-display: "Bricolage Grotesque Variable", system-ui, sans-serif;
+  --font-sans: "Instrument Sans Variable", system-ui, sans-serif;
+
+  /* Superficies */
+  --canvas: 238 242 240; /* #EEF2F0 fondo de la app */
+  --surface: 255 255 255; /* #FFFFFF tarjetas y paneles */
+  --sunken: 244 247 246; /* #F4F7F6 inputs, chips, hover */
+  --line: 214 224 220; /* #D6E0DC bordes suaves */
+  --line-strong: 184 200 195; /* #B8C8C3 bordes de controles */
+
+  /* Tinta */
+  --ink: 16 35 31; /* #10231F */
+  --ink-soft: 58 82 76; /* #3A524C */
+  --ink-muted: 86 111 105; /* #566F69 */
+
+  /* Marca */
+  --primary: 11 107 88; /* #0B6B58 verde nodo */
+  --primary-strong: 8 83 68; /* #085344 hover */
+  --primary-soft: 218 238 232; /* #DAEEE8 fondos tenues */
+  --on-primary: 255 255 255;
+  --accent: 242 107 33; /* #F26B21 naranja de obra: solo señales */
+
+  /* Barra lateral */
+  --sidebar: 12 46 42; /* #0C2E2A */
+  --sidebar-ink: 197 218 213; /* #C5DAD5 */
+  --sidebar-line: 52 86 80; /* #345650 */
+
+  /* Tonos de estado (fondo suave + texto) */
+  --info: 29 79 145;
+  --info-soft: 227 238 251;
+  --warn: 122 67 0;
+  --warn-soft: 252 239 210;
+  --flow: 67 56 168;
+  --flow-soft: 233 231 251;
+  --prop: 122 46 155;
+  --prop-soft: 243 230 249;
+  --ok: 20 104 58;
+  --ok-soft: 221 242 229;
+  --danger: 179 38 30;
+  --danger-soft: 252 230 228;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: rgb(var(--canvas));
+    color: rgb(var(--ink));
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 1;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  /* Foco visible en teclado para todos los controles */
+  :where(a, button, [role="button"], summary):focus-visible {
+    outline: 2px solid rgb(var(--primary));
+    outline-offset: 2px;
+  }
+
+  :where(input, textarea, select):focus-visible {
+    border-color: rgb(var(--primary));
+    box-shadow: 0 0 0 3px rgb(var(--primary) / 0.22);
+  }
+
+  ::selection {
+    background-color: rgb(var(--primary) / 0.22);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
