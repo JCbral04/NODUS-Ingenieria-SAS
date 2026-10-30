@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { UrgencyBars } from "@/components/ui/UrgencyBars";
+import { normalize } from "@/lib/utils";
 
 interface CaseListItem {
   id: number;
@@ -109,7 +110,7 @@ function CasosContent() {
   const [cases, setCases] = useState<CaseListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
 
   // Los filtros viven en la URL: se pueden compartir y funcionan desde el Dashboard.
   const filter = searchParams.get("estado") ?? "TODOS";
@@ -150,7 +151,7 @@ function CasosContent() {
 
   const visibleCases = useMemo(() => {
     if (!cases) return null;
-    const q = query.trim().toLowerCase();
+    const q = normalize(query.trim());
     return cases.filter((c) => {
       if (filter !== "TODOS" && c.status !== filter) return false;
       if (etapa && stageOf(c.status) !== etapa) return false;
@@ -160,7 +161,7 @@ function CasosContent() {
         if (urgencia === "sin" ? known : label !== urgencia) return false;
       }
       if (!q) return true;
-      return [c.caseNumber, c.title, c.company?.name ?? ""].some((v) => v.toLowerCase().includes(q));
+      return [c.caseNumber, c.title, c.company?.name ?? ""].some((v) => normalize(v).includes(q));
     });
   }, [cases, filter, etapa, urgencia, query]);
 
