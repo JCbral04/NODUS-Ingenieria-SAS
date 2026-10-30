@@ -13,6 +13,8 @@ import { Skeleton, SkeletonCard, SkeletonRegion } from "@/components/ui/Skeleton
 import { useToast } from "@/components/ui/Toast";
 import { useConfirm } from "@/components/ui/Confirm";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { CaseStepper } from "@/components/casos/CaseStepper";
+import { CaseStepPanel } from "@/components/casos/CaseStepPanel";
 
 interface LovLabel {
   label: string;
@@ -66,7 +68,8 @@ interface CaseDetail {
   status: string;
   createdAt: string;
   company: { name: string; email: string; country: string; city: string };
-  contact: { fullName: string; position: string; email: string; phone: string };
+  contact: { userId?: number | null; fullName: string; position: string; email: string; phone: string };
+  assignedConsultant?: { userId: number } | null;
   area: LovLabel;
   urgency: LovLabel;
   impact: LovLabel;
@@ -278,7 +281,18 @@ export default function CasoDetallePage() {
         }
       />
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="mt-8">
+        <CaseStepper status={data.status} />
+        <CaseStepPanel
+          caseId={data.id}
+          status={data.status}
+          assignedConsultantUserId={data.assignedConsultant?.userId}
+          contactUserId={data.contact?.userId}
+          onChanged={loadCase}
+        />
+      </div>
+
+      <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="card divide-y divide-line lg:col-span-2">
           <section className="p-6">
             <h2 className="text-lg font-semibold text-ink">{data.title}</h2>
