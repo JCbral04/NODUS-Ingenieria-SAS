@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell,
   Briefcase,
   Building2,
   ChevronDown,
@@ -21,6 +20,7 @@ import { useAuth } from "@/lib/auth";
 import { roleLabel } from "@/lib/case-status";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/Logo";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -44,23 +44,26 @@ export function Topbar() {
   const pathname = usePathname();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
 
   // Los menús se cierran al navegar o con Escape.
   useEffect(() => {
     setNavOpen(false);
     setUserMenuOpen(false);
+    setBellOpen(false);
   }, [pathname]);
 
   useEffect(() => {
-    if (!navOpen && !userMenuOpen) return;
+    if (!navOpen && !userMenuOpen && !bellOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setNavOpen(false);
       setUserMenuOpen(false);
+      setBellOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [navOpen, userMenuOpen]);
+  }, [navOpen, userMenuOpen, bellOpen]);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
@@ -102,20 +105,24 @@ export function Topbar() {
 
         <div className="flex-1 lg:hidden" />
 
-        <button
-          type="button"
-          aria-label="Notificaciones"
-          className="relative rounded-full p-2 text-ink hover:bg-sunken"
-        >
-          <Bell className="h-5 w-5" />
-        </button>
+        <NotificationBell
+          open={bellOpen}
+          onToggle={() => {
+            setBellOpen((o) => !o);
+            setUserMenuOpen(false);
+          }}
+          onClose={() => setBellOpen(false)}
+        />
 
         <div className="relative">
           <button
             type="button"
             aria-expanded={userMenuOpen}
             aria-haspopup="menu"
-            onClick={() => setUserMenuOpen((o) => !o)}
+            onClick={() => {
+              setUserMenuOpen((o) => !o);
+              setBellOpen(false);
+            }}
             className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 text-sm text-ink hover:bg-sunken"
           >
             <span
