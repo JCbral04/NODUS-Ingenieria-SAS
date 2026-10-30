@@ -542,6 +542,7 @@ model Deliverable {
   createdAt   DateTime          @default(now())
 
   @@index([caseId])
+  @@unique([milestoneId, title, version])
 }
 
 // ----------------------------------------------------------------------------
