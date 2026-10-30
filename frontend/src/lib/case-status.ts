@@ -18,24 +18,31 @@ export const STATUS_LABELS: Record<string, string> = {
   CERRADO_SIN_CONTRATACION: "Cerrado sin contratación",
 };
 
+/*
+ * Los estados se muestran como texto, sin píldora: el verde marca el avance,
+ * el negro lo que espera una acción o ya cerró.
+ */
+const T_GREEN = "font-semibold text-primary";
+const T_BLACK = "font-semibold text-ink";
+
 export const STATUS_COLORS: Record<string, string> = {
-  CREADO: "bg-info-soft text-ink",
-  EN_REVISION: "border border-ink bg-surface text-ink",
-  CLASIFICADO: "bg-flow-soft text-ink",
-  EN_POSTULACION: "bg-flow-soft text-ink",
-  ASIGNADO: "bg-flow-soft text-ink",
-  PROPUESTA_EN_DISENO: "bg-prop-soft text-ink",
-  PROPUESTA_LISTA_QA: "bg-prop-soft text-ink",
-  PROPUESTA_ENVIADA: "bg-prop-soft text-ink",
-  EN_DECISION_CLIENTE: "border border-ink bg-surface text-ink",
-  AJUSTES_PROPUESTA: "border border-ink bg-surface text-ink",
-  PROPUESTA_ACEPTADA: "bg-primary text-white",
-  PENDIENTE_CONTRATACION: "bg-primary text-white",
-  AUTORIZADO_EJECUCION: "bg-primary text-white",
-  EN_EJECUCION: "bg-primary text-white",
-  LISTO_PARA_CIERRE: "bg-primary text-white",
-  CERRADO: "bg-ink text-white",
-  CERRADO_SIN_CONTRATACION: "border border-ink bg-info-soft text-ink",
+  CREADO: "font-medium text-ink",
+  EN_REVISION: T_BLACK,
+  CLASIFICADO: T_GREEN,
+  EN_POSTULACION: T_GREEN,
+  ASIGNADO: T_GREEN,
+  PROPUESTA_EN_DISENO: T_GREEN,
+  PROPUESTA_LISTA_QA: T_GREEN,
+  PROPUESTA_ENVIADA: T_GREEN,
+  EN_DECISION_CLIENTE: T_BLACK,
+  AJUSTES_PROPUESTA: T_BLACK,
+  PROPUESTA_ACEPTADA: T_GREEN,
+  PENDIENTE_CONTRATACION: T_GREEN,
+  AUTORIZADO_EJECUCION: T_GREEN,
+  EN_EJECUCION: T_GREEN,
+  LISTO_PARA_CIERRE: T_GREEN,
+  CERRADO: "font-bold text-ink",
+  CERRADO_SIN_CONTRATACION: "font-medium text-ink",
 };
 
 export const ALL_STATUSES = Object.keys(STATUS_LABELS);
@@ -45,7 +52,7 @@ export function statusLabel(code: string) {
 }
 
 export function statusColor(code: string) {
-  return STATUS_COLORS[code] ?? "bg-sunken text-ink-soft";
+  return STATUS_COLORS[code] ?? "text-ink";
 }
 const SLA_LABELS: Record<string, string> = {
   OK: "En plazo",
@@ -66,4 +73,18 @@ const ROLE_LABELS: Record<string, string> = {
 
 export function roleLabel(role?: string) {
   return role ? (ROLE_LABELS[role] ?? role) : "";
+}
+
+/** Avance del caso en el flujo, de 0 a 1 (según el orden de los estados). */
+export function statusProgress(code: string) {
+  const i = ALL_STATUSES.indexOf(code);
+  return i < 0 ? 0 : i / (ALL_STATUSES.length - 1);
+}
+
+/** Texto del SLA: lo vencido en negrita y mayúsculas, lo que va en plazo en verde. */
+export function slaTone(state?: string) {
+  if (state === "VENCIDO") return "font-bold uppercase tracking-wide text-ink";
+  if (state === "POR_VENCER") return "font-semibold text-ink";
+  if (state === "OK") return "font-semibold text-primary";
+  return "";
 }

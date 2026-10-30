@@ -166,7 +166,7 @@ export default function DashboardPage() {
                   className="group flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-sunken"
                 >
                   <span
-                    className={`w-44 shrink-0 truncate rounded-full px-2.5 py-1 text-xs font-medium ${statusColor(status)}`}
+                    className={`w-44 shrink-0 truncate text-sm ${statusColor(status)}`}
                   >
                     {statusLabel(status)}
                   </span>
@@ -199,7 +199,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-ink-muted">{c.company?.name ?? "—"}</p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${statusColor(c.status)}`}
+                    className={`shrink-0 text-sm ${statusColor(c.status)}`}
                   >
                     {statusLabel(c.status)}
                   </span>

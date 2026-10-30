@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { statusLabel, statusColor, slaLabel } from "@/lib/case-status";
+import { statusLabel, statusColor, slaLabel, slaTone } from "@/lib/case-status";
 import { TRANSITIONS } from "@/lib/transitions";
 import { AREAS, TIPOS_INTERVENCION, COMPLEJIDADES, IMPACTOS } from "@/lib/lov";
 import { Button } from "@/components/ui/Button";
@@ -72,13 +72,6 @@ interface CaseDetail {
   impact: LovLabel;
   classifications: Classification[];
   stateHistory: StateHistoryEntry[];
-}
-
-function slaColor(state?: string) {
-  if (state === "VENCIDO") return "bg-ink text-white";
-  if (state === "POR_VENCER") return "border border-ink bg-surface text-ink";
-  if (state === "OK") return "bg-ok-soft text-ink";
-  return "";
 }
 
 export default function CasoDetallePage() {
@@ -270,11 +263,11 @@ export default function CasoDetallePage() {
         description={data.title}
         actions={
           <>
-            <span className={`rounded-full px-3 py-1 text-sm font-medium ${statusColor(data.status)}`}>
+            <span className={`text-base ${statusColor(data.status)}`}>
               {statusLabel(data.status)}
             </span>
             {sla?.state && (
-              <span className={`rounded-full px-3 py-1 text-sm font-medium ${slaColor(sla.state)}`}>
+              <span className={`text-base ${slaTone(sla.state)}`}>
                 SLA: {slaLabel(sla.state)}
                 {typeof sla.percent === "number" && ` (${sla.percent}%)`}
                 {typeof sla.elapsedHours === "number" && ` · ${sla.elapsedHours}h`}
