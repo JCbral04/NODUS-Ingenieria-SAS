@@ -244,7 +244,6 @@ async function main() {
   }
 
   console.log('✅ Seed NODUS completado (idempotente).');
-  console.log('   Usuarios demo — password:', PASSWORD);
 }
 
 main()
