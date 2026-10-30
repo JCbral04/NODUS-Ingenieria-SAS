@@ -150,6 +150,14 @@ enum DocumentStage {
   CIERRE
 }
 
+enum ClosureStage {
+  CIERRE_TECNICO
+  REVISADO
+  ENTREGADO
+  ACEPTADO
+  CERRADO
+}
+
 // ----------------------------------------------------------------------------
 // 1. RBAC — Roles y usuarios
 // ----------------------------------------------------------------------------
@@ -186,6 +194,7 @@ model User {
   evaluationsMade     Evaluation[]         @relation("Evaluator")
   auditLogs           AuditLog[]
   notifications       Notification[]
+  acceptedClosures CaseClosure[]
 }
 
 // ----------------------------------------------------------------------------
@@ -286,6 +295,7 @@ model Case {
   assignedConsultant   Consultant? @relation("AssignedCases", fields: [assignedConsultantId], references: [id])
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt
+  closure CaseClosure?
 
   classifications CaseClassification[]
   stateHistory    CaseStateHistory[]
@@ -562,6 +572,22 @@ model CaseDecision {
   @@index([caseId])
 }
 
+model CaseClosure {
+  id               Int          @id @default(autoincrement())
+  caseId           Int          @unique
+  case             Case         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  stage            ClosureStage @default(CIERRE_TECNICO)
+  technicalNotes   String?      @db.Text
+  reviewChecklist  Json?
+  deliveryAct      String?      @db.Text
+  acceptanceNotes  String?      @db.Text
+  acceptedAt       DateTime?
+  acceptedById     Int?
+  acceptedBy       User?        @relation(fields: [acceptedById], references: [id])
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
 model Evaluation {
   id          Int            @id @default(autoincrement())
   caseId      Int
@@ -574,6 +600,7 @@ model Evaluation {
   createdAt   DateTime       @default(now())
 
   @@index([caseId])
+  @@unique([caseId, type, evaluatorId])
 }
 
 // ----------------------------------------------------------------------------

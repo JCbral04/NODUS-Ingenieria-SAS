@@ -3,7 +3,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { CaseStatus } from '@prisma/client';
+import { CaseStatus, Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma.service';
 
@@ -47,29 +47,30 @@ export class WorkflowService {
     target: CaseStatus,
     actorId: number,
     note?: string,
+    externalTx?: Prisma.TransactionClient,
   ) {
-    const caso = await this.prisma.case.findUnique({
-      where: { id: caseId },
-      include: {
-        contact: { select: { userId: true } },
-        assignedConsultant: {
-          include: {
-            user: { select: { fullName: true } },
+    const run = async (tx: Prisma.TransactionClient) => {
+      const caso = await tx.case.findUnique({
+        where: { id: caseId },
+        include: {
+          contact: { select: { userId: true } },
+          assignedConsultant: {
+            include: {
+              user: { select: { fullName: true } },
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!caso) throw new NotFoundException('Caso no existe');
+      if (!caso) throw new NotFoundException('Caso no existe');
 
-    const allowed = TRANSITIONS[caso.status] ?? [];
-    if (!allowed.includes(target)) {
-      throw new UnprocessableEntityException(
-        `Transición inválida: ${caso.status} → ${target}`,
-      );
-    }
+      const allowed = TRANSITIONS[caso.status] ?? [];
+      if (!allowed.includes(target)) {
+        throw new UnprocessableEntityException(
+          `Transición inválida: ${caso.status} → ${target}`,
+        );
+      }
 
-    await this.prisma.$transaction(async (tx) => {
       await tx.case.update({
         where: { id: caseId },
         data: { status: target, statusChangedAt: new Date() },
@@ -107,8 +108,12 @@ export class WorkflowService {
         consultantUserId: caso.assignedConsultant?.userId,
         consultantName: caso.assignedConsultant?.user.fullName,
       });
-    });
 
-    return this.prisma.case.findUnique({ where: { id: caseId } });
+      return tx.case.findUnique({ where: { id: caseId } });
+    };
+
+    return externalTx
+      ? run(externalTx)
+      : this.prisma.$transaction(run);
   }
 }

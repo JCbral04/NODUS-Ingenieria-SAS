@@ -15,11 +15,29 @@ import { DocumentsModule } from './documents/documents.module';
 import { SlaModule } from './sla/sla.module';
 import { AuditModule } from './audit/audit.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ClosureModule } from './closure/closure.module';
 import { HealthController } from './health.controller';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, CompaniesModule, CasesModule, WorkflowModule, ConsultantsModule, ApplicationsModule, ProposalsModule, ContractsModule, ExecutionModule, DocumentsModule, SlaModule, AuditModule, NotificationsModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    CompaniesModule,
+    CasesModule,
+    WorkflowModule,
+    ConsultantsModule,
+    ApplicationsModule,
+    ProposalsModule,
+    ContractsModule,
+    ExecutionModule,
+    DocumentsModule,
+    SlaModule,
+    AuditModule,
+    NotificationsModule,
+    ClosureModule,
+  ],
   controllers: [HealthController],
-  providers: [],
+  providers: [PrismaService],
 })
 export class AppModule {}
