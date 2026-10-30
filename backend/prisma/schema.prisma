@@ -596,6 +596,7 @@ model Document {
   deliverable Deliverable?
 
   @@index([caseId, stage])
+  @@unique([caseId, stage, name, version])
 }
 
 // ----------------------------------------------------------------------------
