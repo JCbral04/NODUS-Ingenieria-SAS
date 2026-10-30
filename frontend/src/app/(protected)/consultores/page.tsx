@@ -43,7 +43,7 @@ const GROUPS = [
 function ConsultoresSkeleton() {
   return (
     <SkeletonRegion label="Cargando consultores">
-      <PageHeader title="Consultores" description={<Skeleton className="h-4 w-64" />} />
+      <PageHeader title="Consultores" />
       <div className="card mt-8 divide-y divide-line">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex items-center gap-3 p-5">
@@ -246,17 +246,11 @@ export default function ConsultoresPage() {
   if (!list || !visible) return <ConsultoresSkeleton />;
 
   const hasFilters = onlyAvailable || query.trim() !== "";
-  const habilitados = list.filter((c) => c.status === "HABILITADO").length;
 
   return (
     <div>
       <PageHeader
         title="Consultores"
-        description={
-          list.length > 0
-            ? `${list.length} ${list.length === 1 ? "consultor" : "consultores"}, ${habilitados} ${habilitados === 1 ? "habilitado" : "habilitados"} para tomar casos.`
-            : "Directorio de consultores y su disponibilidad."
-        }
         actions={
           <Button variant="inverse" onClick={() => load(true)} loading={refreshing} loadingText="Actualizando…">
             <RefreshCw className="h-4 w-4" aria-hidden />

@@ -78,7 +78,7 @@ export default function ConsultorDetallePage() {
   if (!data) {
     return (
       <SkeletonRegion label="Cargando consultor">
-        <PageHeader title="Consultor" eyebrow={BACK} description={<Skeleton className="h-4 w-48" />} />
+        <PageHeader title="Consultor" eyebrow={BACK} />
         <div className="card mt-8 space-y-3 p-6">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-4 w-full" />
@@ -90,6 +90,7 @@ export default function ConsultorDetallePage() {
 
   const rows: [string, string][] = [
     ["Correo", data.user.email],
+    ["Especialidad", data.specialty?.label ?? "Sin especialidad"],
     ["Nivel", levelLabel(data.levelCode)],
     ["Modalidad", modalityLabel(data.modality)],
     ["Sponsor", data.sponsorName ?? "—"],
@@ -102,7 +103,6 @@ export default function ConsultorDetallePage() {
       <PageHeader
         eyebrow={BACK}
         title={data.user.fullName}
-        description={data.specialty?.label ?? "Sin especialidad"}
         actions={<span className="text-base font-semibold text-white">{consultantStatusLabel(data.status)}</span>}
       />
 

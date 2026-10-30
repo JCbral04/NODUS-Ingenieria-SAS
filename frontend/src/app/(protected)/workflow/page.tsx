@@ -91,7 +91,7 @@ export default function WorkflowPage() {
 
   return (
     <div>
-      <PageHeader title="Bolsa de casos" description="Casos publicados que coinciden con tu especialidad." centered>
+      <PageHeader title="Bolsa de casos" centered>
         {cases && cases.length > 0 && (
           <dl className="mt-6 flex items-start justify-center gap-10 sm:gap-16">
             {[

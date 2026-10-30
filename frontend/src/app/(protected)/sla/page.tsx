@@ -194,7 +194,7 @@ export default function SlaPage() {
   if (!rows) {
     return (
       <SkeletonRegion label="Cargando el tablero de SLA">
-        <PageHeader title="SLA" description={<Skeleton className="h-4 w-64" />} />
+        <PageHeader title="SLA" />
         <div className="mt-8 flex flex-col items-center gap-6">
           <Skeleton className="h-40 w-40 rounded-full" />
           <div className="card w-full max-w-[920px] divide-y divide-line">
@@ -231,11 +231,6 @@ export default function SlaPage() {
     <div>
       <PageHeader
         title="SLA"
-        description={
-          rows.length === 0
-            ? "Plazos de atención de cada caso."
-            : `${counts.vencido} ${counts.vencido === 1 ? "vencido" : "vencidos"} y ${counts.porVencer} por vencer, de ${rows.length} casos.`
-        }
         actions={
           <Button variant="inverse" onClick={() => load(true)} loading={refreshing} loadingText="Actualizando…">
             <RefreshCw className="h-4 w-4" aria-hidden />

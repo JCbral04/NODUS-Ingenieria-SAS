@@ -201,7 +201,7 @@ function CasosContent() {
 
   return (
     <div>
-      <PageHeader title="Casos" description="Clasificados por urgencia, de lo más urgente a lo menos." />
+      <PageHeader title="Casos" />
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <label className="relative w-full sm:w-auto">

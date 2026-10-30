@@ -185,7 +185,7 @@ export default function DocumentosPage() {
   if (!cases) {
     return (
       <SkeletonRegion label="Cargando documentos">
-        <PageHeader title="Documentos" description={<Skeleton className="h-4 w-64" />} />
+        <PageHeader title="Documentos" />
         <Skeleton className="mt-8 h-72 w-full rounded-3xl" />
         <div className="mt-8 space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -202,7 +202,6 @@ export default function DocumentosPage() {
     <div>
       <PageHeader
         title="Documentos"
-        description="Sube un archivo o revisa lo último que se movió."
         actions={
           <Button variant="inverse" onClick={() => load(true)} loading={refreshing} loadingText="Actualizando…">
             <RefreshCw className="h-4 w-4" aria-hidden />

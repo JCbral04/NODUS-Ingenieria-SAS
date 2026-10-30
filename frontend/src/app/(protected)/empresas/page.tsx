@@ -129,7 +129,7 @@ export default function EmpresasPage() {
   if (!companies || !visible) {
     return (
       <SkeletonRegion label="Cargando empresas">
-        <PageHeader title="Empresas" description={<Skeleton className="h-4 w-64" />} />
+        <PageHeader title="Empresas" />
         <div className="card mt-8 divide-y divide-line">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center justify-between gap-4 p-5">
@@ -149,11 +149,6 @@ export default function EmpresasPage() {
     <div>
       <PageHeader
         title="Empresas"
-        description={
-          companies.length > 0
-            ? `${companies.length} ${companies.length === 1 ? "empresa" : "empresas"}. Toca una para ver sus casos.`
-            : "Empresas que han registrado casos."
-        }
         actions={
           <Button variant="inverse" onClick={() => load(true)} loading={refreshing} loadingText="Actualizando…">
             <RefreshCw className="h-4 w-4" aria-hidden />

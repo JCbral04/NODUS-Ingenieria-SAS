@@ -262,7 +262,6 @@ export default function CasoDetallePage() {
           </Link>
         }
         title={data.caseNumber}
-        description={data.title}
         actions={
           <>
             <span className="text-base font-semibold text-white">{statusLabel(data.status)}</span>
@@ -282,7 +281,7 @@ export default function CasoDetallePage() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="card divide-y divide-line lg:col-span-2">
           <section className="p-6">
-            <h2 className="text-lg font-semibold text-ink">Descripción</h2>
+            <h2 className="text-lg font-semibold text-ink">{data.title}</h2>
             <p className="mt-2 text-sm text-ink-soft">{data.description}</p>
             <dl className="mt-4 grid grid-cols-3 gap-4 text-sm">
               <div>

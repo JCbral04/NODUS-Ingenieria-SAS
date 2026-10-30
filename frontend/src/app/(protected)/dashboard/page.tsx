@@ -111,7 +111,7 @@ export default function DashboardPage() {
   if (!cases) {
     return (
       <SkeletonRegion label="Cargando indicadores">
-        <PageHeader title="Dashboard" description={<Skeleton className="h-4 w-64" />} />
+        <PageHeader title="Dashboard" />
         <div className="mt-8 grid grid-cols-4 gap-3 sm:grid-cols-7">
           {Array.from({ length: 21 }).map((_, i) => (
             <Skeleton key={i} className="h-16 rounded-2xl" />
@@ -154,7 +154,6 @@ export default function DashboardPage() {
     <div>
       <PageHeader
         title={firstName ? `Hola, ${firstName}` : "Dashboard"}
-        description="Dónde se acumula el trabajo, por urgencia y etapa."
         actions={
           <Button variant="inverse" onClick={() => load(true)} loading={refreshing} loadingText="Actualizando…">
             <RefreshCw className="h-4 w-4" aria-hidden />
